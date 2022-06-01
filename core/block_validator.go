@@ -17,7 +17,10 @@
 package core
 
 import (
+	"errors"
 	"fmt"
+
+	"github.com/ethereum/go-ethereum/consensus/layer2"
 
 	"github.com/ethereum/go-ethereum/consensus"
 	"github.com/ethereum/go-ethereum/core/state"
@@ -99,6 +102,19 @@ func (v *BlockValidator) ValidateState(block *types.Block, statedb *state.StateD
 	if root := statedb.IntermediateRoot(v.config.IsEIP158(header.Number)); header.Root != root {
 		return fmt.Errorf("invalid merkle root (remote: %x local: %x)", header.Root, root)
 	}
+
+	if engine, ok := v.engine.(*layer2.Layer2Instant); ok {
+		mmrSize, mmrRoot := engine.ExtractMMR(receipts)
+		if mmrSize == 0 {
+			parent := v.bc.GetHeader(header.ParentHash, header.Number.Uint64()-1)
+			mmrSize = parent.Nonce.Uint64()
+			mmrRoot = parent.MixDigest
+		}
+		if mmrSize != header.Nonce.Uint64() || mmrRoot != header.MixDigest {
+			return errors.New("invalid mmr info")
+		}
+	}
+
 	return nil
 }
 

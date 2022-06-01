@@ -23,6 +23,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/ethereum/go-ethereum/consensus/layer2"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/consensus"
@@ -77,6 +79,10 @@ func New(eth Backend, config *Config, chainConfig *params.ChainConfig, mux *even
 		startCh: make(chan common.Address),
 		stopCh:  make(chan struct{}),
 		worker:  newWorker(config, chainConfig, engine, eth, mux, isLocalBlock, true),
+	}
+	if _, ok := engine.(*layer2.Layer2Instant); ok {
+		log.Info("disable preseal for layer2Instant engine")
+		miner.DisablePreseal()
 	}
 	miner.wg.Add(1)
 	go miner.update()
