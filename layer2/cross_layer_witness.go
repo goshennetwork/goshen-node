@@ -11,7 +11,7 @@ import (
 	"github.com/laizy/web3/utils"
 )
 
-var MessageSentEventID = crypto.Keccak256Hash([]byte("MessageSent(uint64,address,address,bytes,bytes32)"))
+var MessageSentEventID = crypto.Keccak256Hash([]byte("MessageSent(uint64,address,address,bytes32,bytes)"))
 
 type MessageSentEvent struct {
 	MessageIndex uint64
@@ -43,10 +43,10 @@ func ParseMessageSentEvent(log *types.Log) (*MessageSentEvent, error) {
 		Topics:  convertHashes(log.Topics),
 		Data:    log.Data,
 	}
-	evt := abi.MustNewEvent("MessageSent(uint64,address,address,bytes,bytes32)")
+	evt := abi.MustNewEvent("MessageSent(uint64 indexed _messageIndex,address indexed _target,address indexed _sender, bytes32 _mmrRoot, bytes _message)")
+
 	utils.EnsureTrue(evt.ID() == web3.Hash(MessageSentEventID))
 
-	res := make([]*MessageSentEvent, 0)
 	args, err := evt.ParseLog(web3Log)
 	if err != nil {
 		return nil, err
@@ -56,6 +56,5 @@ func ParseMessageSentEvent(log *types.Log) (*MessageSentEvent, error) {
 	if err != nil {
 		return nil, err
 	}
-	res = append(res, &evtItem)
 	return &evtItem, nil
 }

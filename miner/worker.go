@@ -316,6 +316,7 @@ func (w *worker) pendingBlockAndReceipts() (*types.Block, types.Receipts) {
 
 // start sets the running status as 1 and triggers new work submitting.
 func (w *worker) start() {
+	log.Debug("miner start running")
 	atomic.StoreInt32(&w.running, 1)
 	w.startCh <- struct{}{}
 }
@@ -401,16 +402,19 @@ func (w *worker) newWorkLoop(recommit time.Duration) {
 	for {
 		select {
 		case <-w.startCh:
+			log.Debug("miner: receive start signal, start new work")
 			clearPending(w.chain.CurrentBlock().NumberU64())
 			timestamp = time.Now().Unix()
 			commit(false, commitInterruptNewHead)
 
 		case head := <-w.chainHeadCh:
+			log.Debug("miner: receive new chain head signal, start new work")
 			clearPending(head.Block.NumberU64())
 			timestamp = time.Now().Unix()
 			commit(false, commitInterruptNewHead)
 
 		case <-timer.C:
+			log.Debug("miner: receive timeout signal, start resubmit")
 			// If mining is running resubmit a new work cycle periodically to pull in
 			// higher priced transactions. Disable this overhead for pending blocks.
 			if w.isRunning() && (w.chainConfig.Clique == nil || w.chainConfig.Clique.Period > 0) {
@@ -915,6 +919,7 @@ func (w *worker) commitTransactions(txs *types.TransactionsByPriceAndNonce, coin
 
 // commitNewWork generates several new sealing tasks based on the parent block.
 func (w *worker) commitNewWork(interrupt *int32, noempty bool, timestamp int64) {
+	log.Debug("miner: commit new work")
 	w.mu.RLock()
 	defer w.mu.RUnlock()
 
@@ -1004,7 +1009,10 @@ func (w *worker) commitNewWork(interrupt *int32, noempty bool, timestamp int64) 
 	// Create an empty block based on temporary copied state for
 	// sealing in advance without waiting block execution finished.
 	if !noempty && atomic.LoadUint32(&w.noempty) == 0 {
-		w.commit(uncles, nil, false, tstart)
+		err = w.commit(uncles, nil, false, tstart)
+		if err != nil {
+			log.Error("assemble empty block failed", "err", err)
+		}
 	}
 
 	// Fill the block with all available pending transactions.
@@ -1036,7 +1044,10 @@ func (w *worker) commitNewWork(interrupt *int32, noempty bool, timestamp int64) 
 			return
 		}
 	}
-	w.commit(uncles, w.fullTaskHook, true, tstart)
+	err = w.commit(uncles, w.fullTaskHook, true, tstart)
+	if err != nil {
+		log.Error("assemble block failed", "err", err)
+	}
 }
 
 // commit runs any post-transaction state modifications, assembles the final block
