@@ -28,8 +28,10 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/consensus"
 	"github.com/ethereum/go-ethereum/consensus/ethash"
+	"github.com/ethereum/go-ethereum/core/mock_state"
 	"github.com/ethereum/go-ethereum/core/rawdb"
 	"github.com/ethereum/go-ethereum/core/state"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -44,6 +46,7 @@ import (
 var (
 	canonicalSeed = 1
 	forkSeed      = 2
+	useMock       = true
 )
 
 // newCanonical creates a chain database, and injects a deterministic canonical
@@ -120,7 +123,7 @@ func testFork(t *testing.T, blockchain *BlockChain, i, n int, full bool, compara
 	if full {
 		cur := blockchain.CurrentBlock()
 		tdPre = blockchain.GetTd(cur.Hash(), cur.NumberU64())
-		if err := testBlockChainImport(blockChainB, blockchain); err != nil {
+		if err := testBlockChainImport(t, blockChainB, blockchain, useMock); err != nil {
 			t.Fatalf("failed to import forked block chain: %v", err)
 		}
 		last := blockChainB[len(blockChainB)-1]
@@ -140,7 +143,7 @@ func testFork(t *testing.T, blockchain *BlockChain, i, n int, full bool, compara
 
 // testBlockChainImport tries to process a chain of blocks, writing them into
 // the database if successful.
-func testBlockChainImport(chain types.Blocks, blockchain *BlockChain) error {
+func testBlockChainImport(t *testing.T, chain types.Blocks, blockchain *BlockChain, useMockState bool) error {
 	for _, block := range chain {
 		// Try and process the block
 		err := blockchain.engine.VerifyHeader(blockchain, block.Header(), true)
@@ -153,15 +156,26 @@ func testBlockChainImport(chain types.Blocks, blockchain *BlockChain) error {
 			}
 			return err
 		}
-		statedb, err := state.New(blockchain.GetBlockByHash(block.ParentHash()).Root(), blockchain.stateCache, nil)
-		if err != nil {
-			return err
+		var statedb *state.StateDB
+		var mock *mock_state.MockDatabase
+		if useMockState {
+			mock = mock_state.NewMockDatabase(blockchain.stateCache)
+			statedb, err = state.New(blockchain.GetBlockByHash(block.ParentHash()).Root(), mock, nil)
+			if err != nil {
+				return err
+			}
+		} else {
+			statedb, err = state.New(blockchain.GetBlockByHash(block.ParentHash()).Root(), blockchain.stateCache, nil)
+			if err != nil {
+				return err
+			}
 		}
 		receipts, _, usedGas, err := blockchain.processor.Process(block, statedb, vm.Config{})
 		if err != nil {
 			blockchain.reportBlock(block, receipts, err)
 			return err
 		}
+		logReadKeyProof(t, mock)
 		err = blockchain.validator.ValidateState(block, statedb, receipts, usedGas)
 		if err != nil {
 			blockchain.reportBlock(block, receipts, err)
@@ -175,6 +189,19 @@ func testBlockChainImport(chain types.Blocks, blockchain *BlockChain) error {
 		blockchain.chainmu.Unlock()
 	}
 	return nil
+}
+
+func logReadKeyProof(t *testing.T, mockDB *mock_state.MockDatabase) {
+	if mockDB == nil {
+		return
+	}
+	result, err := mockDB.GetReadStorageKeyProof()
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, node := range result {
+		t.Log(hexutil.Encode(node))
+	}
 }
 
 // testHeaderChainImport tries to process a chain of header, writing them into
@@ -343,7 +370,7 @@ func testBrokenChain(t *testing.T, full bool) {
 	// Create a forked chain, and try to insert with a missing link
 	if full {
 		chain := makeBlockChain(blockchain.CurrentBlock(), 5, ethash.NewFaker(), db, forkSeed)[1:]
-		if err := testBlockChainImport(chain, blockchain); err == nil {
+		if err := testBlockChainImport(t, chain, blockchain, useMock); err == nil {
 			t.Errorf("broken block chain not reported")
 		}
 	} else {

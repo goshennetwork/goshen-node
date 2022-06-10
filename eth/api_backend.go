@@ -19,6 +19,7 @@ package eth
 import (
 	"context"
 	"errors"
+	"fmt"
 	"math/big"
 	"time"
 
@@ -28,6 +29,7 @@ import (
 	"github.com/ethereum/go-ethereum/consensus"
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/bloombits"
+	"github.com/ethereum/go-ethereum/core/mock_state"
 	"github.com/ethereum/go-ethereum/core/rawdb"
 	"github.com/ethereum/go-ethereum/core/state"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -358,4 +360,21 @@ func (b *EthAPIBackend) StateAtBlock(ctx context.Context, block *types.Block, re
 
 func (b *EthAPIBackend) StateAtTransaction(ctx context.Context, block *types.Block, txIndex int, reexec uint64) (core.Message, vm.BlockContext, *state.StateDB, error) {
 	return b.eth.stateAtTransaction(block, txIndex, reexec)
+}
+
+func (b *EthAPIBackend) ReadStorageProofAtBlock(ctx context.Context, blockNrOrHash rpc.BlockNumberOrHash) ([][]byte, error) {
+	block, err := b.BlockByNumberOrHash(ctx, blockNrOrHash)
+	if err != nil {
+		return nil, err
+	}
+	if block.NumberU64() < 1 {
+		return nil, fmt.Errorf("unsupport block")
+	}
+	mock := mock_state.NewMockDatabase(b.eth.blockchain.StateCache())
+	statedb, err := state.New(block.ParentHash(), mock, nil)
+	_, _, _, err = b.eth.blockchain.Processor().Process(block, statedb, *b.eth.blockchain.GetVMConfig())
+	if err != nil {
+		return nil, fmt.Errorf("processing block %d failed: %v", block.NumberU64(), err)
+	}
+	return mock.GetReadStorageKeyProof()
 }

@@ -2018,6 +2018,10 @@ func (api *PrivateDebugAPI) ChaindbCompact() error {
 	return nil
 }
 
+func (s *PrivateDebugAPI) GetReadStorageProofAtBlock(ctx context.Context, blockNrOrHash rpc.BlockNumberOrHash) ([][]byte, error) {
+	return s.b.ReadStorageProofAtBlock(ctx, blockNrOrHash)
+}
+
 // SetHead rewinds the head of the blockchain to a previous block.
 func (api *PrivateDebugAPI) SetHead(number hexutil.Uint64) {
 	api.b.SetHead(uint64(number))
