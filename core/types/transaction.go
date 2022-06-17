@@ -26,6 +26,7 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/consts"
 	"github.com/ethereum/go-ethereum/common/math"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/rlp"
@@ -396,6 +397,10 @@ func (tx *Transaction) WithSignature(signer Signer, sig []byte) (*Transaction, e
 	cpy := tx.inner.copy()
 	cpy.setSignatureValues(signer.ChainID(), v, r, s)
 	return &Transaction{inner: cpy, time: tx.time}, nil
+}
+
+func (tx *Transaction) IsQueue() bool {
+	return tx.Nonce() >= consts.InitialEnqueueNonceNonce
 }
 
 // Transactions implements DerivableList for transactions.

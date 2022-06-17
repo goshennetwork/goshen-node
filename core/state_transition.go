@@ -22,10 +22,12 @@ import (
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/consts"
 	cmath "github.com/ethereum/go-ethereum/common/math"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/params"
 )
 
@@ -214,17 +216,22 @@ func (st *StateTransition) buyGas() error {
 func (st *StateTransition) preCheck() error {
 	// Only check transactions that are not fake
 	if !st.msg.IsFake() {
-		// Make sure this transaction's nonce is correct.
-		stNonce := st.state.GetNonce(st.msg.From())
-		if msgNonce := st.msg.Nonce(); stNonce < msgNonce {
-			return fmt.Errorf("%w: address %v, tx: %d state: %d", ErrNonceTooHigh,
-				st.msg.From().Hex(), msgNonce, stNonce)
-		} else if stNonce > msgNonce {
-			return fmt.Errorf("%w: address %v, tx: %d state: %d", ErrNonceTooLow,
-				st.msg.From().Hex(), msgNonce, stNonce)
-		} else if stNonce+1 < stNonce {
-			return fmt.Errorf("%w: address %v, nonce: %d", ErrNonceMax,
-				st.msg.From().Hex(), stNonce)
+		//maybe use param in chainConfig
+		if st.evm.ChainConfig().Layer2Instant != nil && st.msg.Nonce() >= consts.InitialEnqueueNonceNonce { //l1 queue tx already checked in l1 contracats
+			log.Warn("state transition skipping nonce check with l1 queue tx")
+		} else {
+			// Make sure this transaction's nonce is correct.
+			stNonce := st.state.GetNonce(st.msg.From())
+			if msgNonce := st.msg.Nonce(); stNonce < msgNonce {
+				return fmt.Errorf("%w: address %v, tx: %d state: %d", ErrNonceTooHigh,
+					st.msg.From().Hex(), msgNonce, stNonce)
+			} else if stNonce > msgNonce {
+				return fmt.Errorf("%w: address %v, tx: %d state: %d", ErrNonceTooLow,
+					st.msg.From().Hex(), msgNonce, stNonce)
+			} else if stNonce >= consts.MaxSenderNonce { // here stNonce == msgNonce
+				return fmt.Errorf("%w: address %v, nonce: %d", ErrNonceMax,
+					st.msg.From().Hex(), stNonce)
+			}
 		}
 		// Make sure the sender is an EOA
 		if codeHash := st.state.GetCodeHash(st.msg.From()); codeHash != emptyCodeHash && codeHash != (common.Hash{}) {

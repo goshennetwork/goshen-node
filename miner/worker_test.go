@@ -166,6 +166,7 @@ func newTestWorkerBackend(t *testing.T, chainConfig *params.ChainConfig, engine 
 
 func (b *testWorkerBackend) BlockChain() *core.BlockChain { return b.chain }
 func (b *testWorkerBackend) TxPool() *core.TxPool         { return b.txPool }
+func (t *testWorkerBackend) RollupBackend() RollupBackend { return nil }
 
 func (b *testWorkerBackend) newRandomUncle() *types.Block {
 	var parent *types.Block

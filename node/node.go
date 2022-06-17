@@ -33,6 +33,10 @@ import (
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/p2p"
 	"github.com/ethereum/go-ethereum/rpc"
+	"github.com/laizy/web3/jsonrpc"
+	"github.com/laizy/web3/utils"
+	"github.com/ontology-layer-2/optimistic-rollup/store/leveldbstore"
+	"github.com/ontology-layer-2/optimistic-rollup/store/schema"
 	"github.com/prometheus/tsdb/fileutil"
 )
 
@@ -59,6 +63,13 @@ type Node struct {
 	inprocHandler *rpc.Server // In-process RPC request handler to process the API requests
 
 	databases map[*closeTrackingDB]struct{} // All open databases
+
+	RollupInfo *RollupInfo
+}
+type RollupInfo struct {
+	//the all rollup db
+	RollupDb schema.PersistStore
+	L1Client *jsonrpc.Client
 }
 
 const (
@@ -149,6 +160,23 @@ func New(conf *Config) (*Node, error) {
 	node.http = newHTTPServer(node.log, conf.HTTPTimeouts)
 	node.ws = newHTTPServer(node.log, rpc.DefaultHTTPTimeouts)
 	node.ipc = newIPCServer(node.log, conf.IPCEndpoint())
+
+	rollupConf := conf.RollupConfig
+	if rollupConf != nil {
+		node.RollupInfo = &RollupInfo{}
+		//if not empty, try to set up rollup store
+		node.RollupInfo.L1Client, err = jsonrpc.NewClient(rollupConf.SyncConfig.L1RpcUrl)
+		if err != nil {
+			return nil, fmt.Errorf("connect l1 client failed, err: ", err)
+		}
+		rollupDb, err := leveldbstore.NewLevelDBStore(rollupConf.SyncConfig.DbDir)
+		utils.Ensure(err)
+		node.RollupInfo.RollupDb = rollupDb
+		//add rpc module
+		log.Info("open l2 http&ws module")
+		conf.HTTPModules = append(conf.HTTPModules, "l2")
+		conf.WSModules = append(conf.WSModules, "l2")
+	}
 
 	return node, nil
 }
@@ -260,10 +288,14 @@ func (n *Node) doClose(errs []error) error {
 
 // openEndpoints starts all network and RPC endpoints.
 func (n *Node) openEndpoints() error {
-	// start networking endpoints
-	n.log.Info("Starting peer-to-peer node", "instance", n.server.Name)
-	if err := n.server.Start(); err != nil {
-		return convertFileLockError(err)
+	if n.RollupInfo != nil { //in l2 consensus, do not open p2p servce
+		n.log.Info("stop peer-to-peer server in l2 mode")
+	} else {
+		// start networking endpoints
+		n.log.Info("Starting peer-to-peer node", "instance", n.server.Name)
+		if err := n.server.Start(); err != nil {
+			return convertFileLockError(err)
+		}
 	}
 	// start RPC endpoints
 	err := n.startRPC()
@@ -297,8 +329,10 @@ func (n *Node) stopServices(running []Lifecycle) error {
 		}
 	}
 
-	// Stop p2p networking.
-	n.server.Stop()
+	if n.RollupInfo == nil { //l2 protocol do not start p2p ever
+		// Stop p2p networking.
+		n.server.Stop()
+	}
 
 	if len(failure.Services) > 0 {
 		return failure

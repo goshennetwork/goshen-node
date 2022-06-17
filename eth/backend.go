@@ -31,6 +31,7 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/consensus"
 	"github.com/ethereum/go-ethereum/consensus/clique"
+	"github.com/ethereum/go-ethereum/consensus/layer2"
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/bloombits"
 	"github.com/ethereum/go-ethereum/core/rawdb"
@@ -54,6 +55,7 @@ import (
 	"github.com/ethereum/go-ethereum/p2p/enode"
 	"github.com/ethereum/go-ethereum/params"
 	"github.com/ethereum/go-ethereum/rlp"
+	"github.com/ethereum/go-ethereum/rollup"
 	"github.com/ethereum/go-ethereum/rpc"
 )
 
@@ -94,7 +96,8 @@ type Ethereum struct {
 
 	p2pServer *p2p.Server
 
-	lock sync.RWMutex // Protects the variadic fields (e.g. gas price and etherbase)
+	rollupBackend *rollup.RollupBackend
+	lock          sync.RWMutex // Protects the variadic fields (e.g. gas price and etherbase)
 }
 
 // New creates a new Ethereum object (including the
@@ -224,7 +227,12 @@ func New(stack *node.Node, config *ethconfig.Config) (*Ethereum, error) {
 	}); err != nil {
 		return nil, err
 	}
-
+	if _, ok := eth.engine.(*layer2.Layer2Instant); ok { //if use l2 consensus, give it rollup backend
+		if stack.RollupInfo == nil {
+			panic("inconsistent")
+		}
+		eth.rollupBackend = rollup.NewBackend(eth, stack.RollupInfo.RollupDb, stack.RollupInfo.L1Client)
+	}
 	eth.miner = miner.New(eth, &config.Miner, chainConfig, eth.EventMux(), eth.engine, eth.isLocalBlock)
 	eth.miner.SetExtra(makeExtraData(config.Miner.ExtraData))
 
@@ -255,7 +263,12 @@ func New(stack *node.Node, config *ethconfig.Config) (*Ethereum, error) {
 	// Register the backend on the node
 	stack.RegisterAPIs(eth.APIs())
 	stack.RegisterProtocols(eth.Protocols())
-	stack.RegisterLifecycle(eth)
+	if _, ok := eth.engine.(*layer2.Layer2Instant); ok {
+		log.Warn("skipping register eth service in layer2 mod")
+	} else {
+		stack.RegisterLifecycle(eth)
+	}
+
 	// Check for unclean shutdown
 	if uncleanShutdowns, discards, err := rawdb.PushUncleanShutdownMarker(chainDb); err != nil {
 		log.Error("Could not update unclean-shutdown-marker list", "error", err)
@@ -298,7 +311,7 @@ func (s *Ethereum) APIs() []rpc.API {
 	apis = append(apis, s.engine.APIs(s.BlockChain())...)
 
 	// Append all the local APIs and return
-	return append(apis, []rpc.API{
+	apis = append(apis, []rpc.API{
 		{
 			Namespace: "eth",
 			Version:   "1.0",
@@ -337,13 +350,19 @@ func (s *Ethereum) APIs() []rpc.API {
 			Namespace: "debug",
 			Version:   "1.0",
 			Service:   NewPrivateDebugAPI(s),
-		}, {
+		},
+	}...)
+	if _, ok := s.engine.(*layer2.Layer2Instant); ok {
+		log.Warn("l2 do not open net rpc service api")
+	} else {
+		apis = append(apis, rpc.API{
 			Namespace: "net",
 			Version:   "1.0",
 			Service:   s.netRPCService,
 			Public:    true,
-		},
-	}...)
+		})
+	}
+	return apis
 }
 
 func (s *Ethereum) ResetWithGenesisBlock(gb *types.Block) {
@@ -562,4 +581,8 @@ func (s *Ethereum) Stop() error {
 	s.eventMux.Stop()
 
 	return nil
+}
+
+func (s *Ethereum) RollupBackend() *rollup.RollupBackend {
+	return s.rollupBackend
 }

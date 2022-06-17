@@ -66,7 +66,11 @@ import (
 	"github.com/ethereum/go-ethereum/p2p/nat"
 	"github.com/ethereum/go-ethereum/p2p/netutil"
 	"github.com/ethereum/go-ethereum/params"
+	"github.com/ethereum/go-ethereum/rollup"
 	pcsclite "github.com/gballet/go-libpcsclite"
+	"github.com/laizy/web3/utils"
+	"github.com/ontology-layer-2/optimistic-rollup/config"
+	sync_service "github.com/ontology-layer-2/optimistic-rollup/sync-service"
 	gopsutil "github.com/shirou/gopsutil/mem"
 	"gopkg.in/urfave/cli.v1"
 )
@@ -789,7 +793,38 @@ var (
 		Name:  "catalyst",
 		Usage: "Catalyst mode (eth2 integration testing)",
 	}
+
+	//rollup config
+	RollupEnableFlag = cli.BoolFlag{
+		Name:  "l2",
+		Usage: "enable l2 client",
+	}
+
+	RollupSyncConfigFile = cli.StringFlag{
+		Name:  "sync-config",
+		Usage: "specify sync-service config filename",
+		Value: config.DefaultSyncConfigName,
+	}
+
+	RollupContractsConfigFile = cli.StringFlag{
+		Name:  "contracts-config",
+		Usage: "specify l1 contracts config filename",
+		Value: config.DefaultContractName,
+	}
 )
+
+//set rollup config to node
+func setRollupConfig(ctx *cli.Context, cfg *node.Config) {
+	if ctx.GlobalBool(RollupEnableFlag.Name) {
+		//debug
+		log.Info("set rollup config to node.")
+		var syncConfig sync_service.Config
+		utils.Ensure(utils.LoadJsonFile(ctx.GlobalString(RollupSyncConfigFile.Name), &syncConfig))
+		var contractsConfig config.Contracts
+		utils.Ensure(utils.LoadJsonFile(ctx.GlobalString(RollupContractsConfigFile.Name), &contractsConfig))
+		cfg.RollupConfig = &config.RollupConfig{SyncConfig: syncConfig, Contracts: contractsConfig}
+	}
+}
 
 // MakeDataDir retrieves the currently requested data directory, terminating
 // if none (or the empty string) is specified. If the node is starting a testnet,
@@ -1216,6 +1251,8 @@ func SetNodeConfig(ctx *cli.Context, cfg *node.Config) {
 	setNodeUserIdent(ctx, cfg)
 	setDataDir(ctx, cfg)
 	setSmartCard(ctx, cfg)
+	//set rollup config
+	setRollupConfig(ctx, cfg)
 
 	if ctx.GlobalIsSet(ExternalSignerFlag.Name) {
 		cfg.ExternalSigner = ctx.GlobalString(ExternalSignerFlag.Name)
@@ -1726,6 +1763,20 @@ func RegisterEthService(stack *node.Node, cfg *ethconfig.Config) (ethapi.Backend
 	}
 	stack.RegisterAPIs(tracers.APIs(backend.APIBackend))
 	return backend.APIBackend, backend
+}
+
+func RegisterSyncService(stack *node.Node, cfg *sync_service.Config) {
+	syncService := sync_service.NewSyncService(stack.RollupInfo.RollupDb, stack.RollupInfo.L1Client, cfg)
+	//todo api registered here
+	//stack.RegisterAPIs()
+	stack.RegisterLifecycle(syncService)
+}
+
+func RegisterWitnessService(stack *node.Node, rollupBackend *rollup.RollupBackend, cfg *sync_service.Config) {
+	witnessService := rollup.NewWitnessService(rollupBackend, cfg)
+	stack.RegisterLifecycle(witnessService)
+	//register upload api
+	stack.RegisterAPIs(rollup.Apis(rollupBackend))
 }
 
 // RegisterEthStatsService configures the Ethereum Stats daemon and adds it to

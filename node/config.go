@@ -26,6 +26,8 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/ontology-layer-2/optimistic-rollup/config"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/log"
@@ -190,6 +192,8 @@ type Config struct {
 
 	// AllowUnprotectedTxs allows non EIP-155 protected transactions to be send over RPC.
 	AllowUnprotectedTxs bool `toml:",omitempty"`
+
+	RollupConfig *config.RollupConfig
 }
 
 // IPCEndpoint resolves an IPC endpoint based on a configured value, taking into

@@ -9,6 +9,47 @@ https://camo.githubusercontent.com/915b7be44ada53c290eb157634330494ebe3e30a/6874
 [![Travis](https://travis-ci.com/ethereum/go-ethereum.svg?branch=master)](https://travis-ci.com/ethereum/go-ethereum)
 [![Discord](https://img.shields.io/badge/discord-join%20chat-blue.svg)](https://discord.gg/nthXNEv)
 
+
+## setup l2 client
+
+```shell
+#when start l2 client, we need to init l2 genesis block first
+./geth --datadir chaindata init genesis.json
+
+#fixme: maybe do not need to set etherbase, it's set by l2 consensus?
+# flowing has some implicit params, details see ./geth --help
+./geth --l2 --datadir chaindata/ --mine --miner.etherbase "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266" --verbosity=5 --gcmode archive --http --http.addr 0.0.0.0 --ws --ws.addr 0.0.0.0 console
+```
+
+### differ between l2 client and ordinary geth client:
+
+- l2 client do not start ethereum protocol, which used to keep state right with other nodes
+- l2 client do not start p2p server, which used to communicate with other nodes.
+- l2 client do not update provide `PublicNetAPI`
+- when attempt to create new block, always try to execute l1 pending queue tx first, and max l1 pending queue num
+  is limited by block gasLimit(though some of them maybe consume no gas)
+- l2 client register sync service to keep state update to date with l1
+- l2 client ensure queue nonce must >= 1<<63, and do not check queue nonce when run in evm, ensure all queue txs will be
+contained in block.
+- l2 client register witness service and provide `l2_getPendingTxBatches` rpc to get pending batch in RollupInputChain.
+witness service check the **order and timestamp**  of l1 tx with tx in l2 block
+  - todo: write web3.js to provide js of l2
+- **todo: provide necessary api**
+
+#### set test account
+```shell
+#import test private key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
+personal.importRawKey('ac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80','')
+
+#unlock test account
+personal.unlockAccount(eth.accounts[0],'')
+
+#transaction sample
+eth.sendTransaction({from: eth.accounts[0],to: '0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266',value: web3.toWei(1,"ether")})
+```
+
+
+
 Automated builds are available for stable releases and the unstable master branch. Binary
 archives are published at https://geth.ethereum.org/downloads/.
 

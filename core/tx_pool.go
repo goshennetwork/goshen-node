@@ -18,6 +18,7 @@ package core
 
 import (
 	"errors"
+	"fmt"
 	"math"
 	"math/big"
 	"sort"
@@ -26,6 +27,7 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/consts"
 	"github.com/ethereum/go-ethereum/common/prque"
 	"github.com/ethereum/go-ethereum/consensus/misc"
 	"github.com/ethereum/go-ethereum/core/state"
@@ -584,6 +586,20 @@ func (pool *TxPool) local() map[common.Address]types.Transactions {
 // validateTx checks whether a transaction is valid according to the consensus
 // rules and adheres to some heuristic limits of the local node (price and size).
 func (pool *TxPool) validateTx(tx *types.Transaction, local bool) error {
+	if pool.chainconfig.Layer2Instant != nil { //l2 tx pool do not accept L1CrossLayer signature message,because of hard coded
+		//in l1, here use the same is fine, maybe set it in chainConfig?
+		sender, err := pool.signer.Sender(tx)
+		if err != nil {
+			return fmt.Errorf("validate l2 tx err: %s", err)
+		}
+		if sender == consts.L1CrossLayerWitnessSender {
+			return fmt.Errorf("malicious sender: %s, only l1 cross layer tx allowed", sender)
+		}
+		if tx.Nonce() >= consts.MaxSenderNonce {
+			return fmt.Errorf("exceed max sender nonce")
+		}
+		return nil
+	}
 	// Accept only legacy transactions until EIP-2718/2930 activates.
 	if !pool.eip2718 && tx.Type() != types.LegacyTxType {
 		return ErrTxTypeNotSupported

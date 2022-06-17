@@ -201,6 +201,12 @@ var (
 		utils.MetricsInfluxDBBucketFlag,
 		utils.MetricsInfluxDBOrganizationFlag,
 	}
+
+	rollupFlags = []cli.Flag{
+		utils.RollupEnableFlag,
+		utils.RollupSyncConfigFile,
+		utils.RollupContractsConfigFile,
+	}
 )
 
 func init() {
@@ -247,6 +253,7 @@ func init() {
 	app.Flags = append(app.Flags, consoleFlags...)
 	app.Flags = append(app.Flags, debug.Flags...)
 	app.Flags = append(app.Flags, metricsFlags...)
+	app.Flags = append(app.Flags, rollupFlags...)
 
 	app.Before = func(ctx *cli.Context) error {
 		return debug.Setup(ctx)

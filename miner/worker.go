@@ -35,7 +35,9 @@ import (
 	"github.com/ethereum/go-ethereum/event"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/params"
+	"github.com/ethereum/go-ethereum/rollup"
 	"github.com/ethereum/go-ethereum/trie"
+	"github.com/ontology-layer-2/optimistic-rollup/store/schema"
 )
 
 const (
@@ -89,17 +91,19 @@ type environment struct {
 	tcount    int            // tx count in cycle
 	gasPool   *core.GasPool  // available gas used to pack transactions
 
-	header   *types.Header
-	txs      []*types.Transaction
-	receipts []*types.Receipt
+	header     *types.Header
+	txs        []*types.Transaction
+	receipts   []*types.Receipt
+	QueueBlock *schema.ChainedEnqueueBlockInfo
 }
 
 // task contains all information for consensus engine sealing and result submitting.
 type task struct {
-	receipts  []*types.Receipt
-	state     *state.StateDB
-	block     *types.Block
-	createdAt time.Time
+	receipts   []*types.Receipt
+	state      *state.StateDB
+	block      *types.Block
+	createdAt  time.Time
+	queueBlock *schema.ChainedEnqueueBlockInfo
 }
 
 const (
@@ -189,6 +193,7 @@ type worker struct {
 	skipSealHook func(*task) bool                   // Method to decide whether skipping the sealing.
 	fullTaskHook func()                             // Method to call before pushing the full sealing task.
 	resubmitHook func(time.Duration, time.Duration) // Method to call upon updating resubmitting interval.
+
 }
 
 func newWorker(config *Config, chainConfig *params.ChainConfig, engine consensus.Engine, eth Backend, mux *event.TypeMux, isLocalBlock func(*types.Block) bool, init bool) *worker {
@@ -245,7 +250,10 @@ func newWorker(config *Config, chainConfig *params.ChainConfig, engine consensus
 }
 
 func (w *worker) layer2Engine() *layer2.Layer2Instant {
-	return w.engine.(*layer2.Layer2Instant)
+	if e, ok := w.engine.(*layer2.Layer2Instant); ok {
+		return e
+	}
+	return nil
 }
 
 // setEtherbase sets the etherbase used to initialize the block coinbase field.
@@ -418,11 +426,12 @@ func (w *worker) newWorkLoop(recommit time.Duration) {
 			// If mining is running resubmit a new work cycle periodically to pull in
 			// higher priced transactions. Disable this overhead for pending blocks.
 			if w.isRunning() && (w.chainConfig.Clique == nil || w.chainConfig.Clique.Period > 0) {
-				// Short circuit if no new transaction arrives.
-				if atomic.LoadInt32(&w.newTxs) == 0 {
+				// Short circuit if no new transaction arrives.And not l2 consensus
+				if atomic.LoadInt32(&w.newTxs) == 0 && w.chainConfig.Layer2Instant == nil {
 					timer.Reset(recommit)
 					continue
 				}
+				//l2 consensus try to commit new block
 				commit(true, commitInterruptResubmit)
 			}
 
@@ -519,6 +528,10 @@ func (w *worker) mainLoop() {
 			}
 
 		case ev := <-w.txsCh:
+			//make sure L2 do not go through this
+			if w.layer2Engine() != nil {
+				continue
+			}
 			// Apply transactions to the pending state if we're not mining.
 			//
 			// Note all transactions received may not be continuous with transactions
@@ -678,6 +691,10 @@ func (w *worker) resultLoop() {
 				log.Error("Failed writing block to chain", "err", err)
 				continue
 			}
+			if w.layer2Engine() != nil && task.queueBlock != nil { //store executed num to rollup db
+				w.eth.RollupBackend().StoreAndSetExecutedNum(task.queueBlock)
+			}
+
 			log.Info("Successfully sealed new block", "number", block.Number(), "sealhash", sealhash, "hash", hash,
 				"elapsed", common.PrettyDuration(time.Since(task.createdAt)))
 
@@ -790,6 +807,11 @@ func (w *worker) commitTransaction(tx *types.Transaction, coinbase common.Addres
 	receipt, err := core.ApplyTransaction(w.chainConfig, w.chain, &coinbase, w.current.gasPool, w.current.state, w.current.header, tx, &w.current.header.GasUsed, *w.chain.GetVMConfig())
 	if err != nil {
 		w.current.state.RevertToSnapshot(snap)
+		// but try to save queue tx
+		// TODO: check whether need to revert to snapshot
+		if tx.IsQueue() {
+			w.current.txs = append(w.current.txs, tx)
+		}
 		return nil, err
 	}
 	w.current.txs = append(w.current.txs, tx)
@@ -930,10 +952,24 @@ func (w *worker) commitNewWork(interrupt *int32, noempty bool, timestamp int64) 
 		timestamp = int64(parent.Time() + 1)
 	}
 	num := parent.Number()
+
+	gasLimit := core.CalcGasLimit(parent.GasLimit(), w.config.GasCeil)
+	var queueTxs *rollup.QueuesWithContext
+	var queueBlockInfo *schema.ChainedEnqueueBlockInfo
+	if w.layer2Engine() != nil {
+		var err error
+		queueTxs, queueBlockInfo, err = w.eth.RollupBackend().GetPendingQueue(num.Uint64(), gasLimit)
+		if err != nil {
+			log.Error("get pending failed", "err", err)
+			return
+		}
+		//set timestamp to l1 context, either l1 newest timestamp, or enqueue txs timestamp
+		timestamp = int64(queueTxs.Timestamp)
+	}
 	header := &types.Header{
 		ParentHash: parent.Hash(),
 		Number:     num.Add(num, common.Big1),
-		GasLimit:   core.CalcGasLimit(parent.GasLimit(), w.config.GasCeil),
+		GasLimit:   gasLimit,
 		Extra:      w.extra,
 		Time:       uint64(timestamp),
 	}
@@ -1017,13 +1053,43 @@ func (w *worker) commitNewWork(interrupt *int32, noempty bool, timestamp int64) 
 
 	// Fill the block with all available pending transactions.
 	pending := w.eth.TxPool().Pending(true)
+
 	// Short circuit if there is no available pending transactions.
 	// But if we disable empty precommit already, ignore it. Since
 	// empty block is necessary to keep the liveness of the network.
-	if len(pending) == 0 {
+	if len(pending) == 0 && w.layer2Engine() != nil && len(queueTxs.Txs) == 0 {
 		w.updateSnapshot()
 		return
 	}
+
+	//should run enqueue tx first to ensure tx will not failed because of reaching block gasLimit
+	if w.layer2Engine() != nil && len(queueTxs.Txs) > 0 {
+		w.current.QueueBlock = queueBlockInfo
+		for _, tx := range queueTxs.Txs { //more strict, check nonce correctness
+			if !tx.IsQueue() {
+				log.Error("queue nonce wired", "nonce", tx.Nonce(), "hash", tx.Hash())
+				return
+			}
+			//todo: cache
+			queue := make(map[common.Address]types.Transactions)
+			sender, err := w.current.signer.Sender(tx)
+			if err != nil { //should never happen
+				panic(err)
+			}
+			queue[sender] = append(queue[sender], tx)
+			txs := types.NewTransactionsByPriceAndNonce(w.current.signer, queue, header.BaseFee)
+			if w.commitTransactions(txs, w.coinbase, interrupt) {
+				return
+			}
+		}
+		//now split l1 queue tx and l2 origin tx
+		err = w.commit(uncles, w.fullTaskHook, true, tstart)
+		if err != nil {
+			log.Error("assemble block failed", "err", err)
+		}
+		return
+	}
+
 	// Split the pending transactions into locals and remotes
 	localTxs, remoteTxs := make(map[common.Address]types.Transactions), pending
 	for _, account := range w.eth.TxPool().Locals() {
@@ -1032,6 +1098,7 @@ func (w *worker) commitNewWork(interrupt *int32, noempty bool, timestamp int64) 
 			localTxs[account] = txs
 		}
 	}
+
 	if len(localTxs) > 0 {
 		txs := types.NewTransactionsByPriceAndNonce(w.current.signer, localTxs, header.BaseFee)
 		if w.commitTransactions(txs, w.coinbase, interrupt) {
@@ -1065,7 +1132,7 @@ func (w *worker) commit(uncles []*types.Header, interval func(), update bool, st
 			interval()
 		}
 		select {
-		case w.taskCh <- &task{receipts: receipts, state: s, block: block, createdAt: time.Now()}:
+		case w.taskCh <- &task{receipts: receipts, state: s, block: block, createdAt: time.Now(), queueBlock: w.current.QueueBlock}:
 			w.unconfirmed.Shift(block.NumberU64() - 1)
 			log.Info("Commit new mining work", "number", block.Number(), "sealhash", w.engine.SealHash(block.Header()),
 				"uncles", len(uncles), "txs", w.current.tcount,

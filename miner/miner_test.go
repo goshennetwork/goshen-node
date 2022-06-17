@@ -54,6 +54,10 @@ func (m *mockBackend) TxPool() *core.TxPool {
 	return m.txPool
 }
 
+func (m *mockBackend) RollupBackend() RollupBackend {
+	return nil
+}
+
 type testBlockChain struct {
 	statedb       *state.StateDB
 	gasLimit      uint64
