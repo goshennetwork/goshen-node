@@ -27,7 +27,7 @@ func newUploadApi(rollupBackend *RollupBackend) *L2Api {
 	return &L2Api{rollupBackend}
 }
 
-//fixme: now only support one sequencer.
+// fixme: now only support one sequencer.
 func (self *L2Api) GetPendingTxBatches() (*binding.RollupInputBatches, error) {
 	if !self.IsSynced() {
 		return nil, fmt.Errorf("syncing")

@@ -78,6 +78,9 @@ var (
 	// current network configuration.
 	ErrTxTypeNotSupported = types.ErrTxTypeNotSupported
 
+	ErrTxUnprotected          = errors.New("transaction not protected")
+	ErrUnexpectedSystemSender = errors.New("transaction with l1 system witness sender")
+
 	// ErrTipAboveFeeCap is a sanity error to ensure no one is able to specify a
 	// transaction with a tip higher than the total fee cap.
 	ErrTipAboveFeeCap = errors.New("max priority fee per gas higher than max fee per gas")

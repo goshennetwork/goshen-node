@@ -588,15 +588,18 @@ func (pool *TxPool) local() map[common.Address]types.Transactions {
 func (pool *TxPool) validateTx(tx *types.Transaction, local bool) error {
 	if pool.chainconfig.Layer2Instant != nil { //l2 tx pool do not accept L1CrossLayer signature message,because of hard coded
 		//in l1, here use the same is fine, maybe set it in chainConfig?
+		if tx.Protected() == false {
+			return ErrTxUnprotected
+		}
 		sender, err := pool.signer.Sender(tx)
 		if err != nil {
 			return fmt.Errorf("validate l2 tx err: %s", err)
 		}
 		if sender == consts.L1CrossLayerWitnessSender {
-			return fmt.Errorf("malicious sender: %s, only l1 cross layer tx allowed", sender)
+			return ErrUnexpectedSystemSender
 		}
 		if tx.Nonce() >= consts.MaxSenderNonce {
-			return fmt.Errorf("exceed max sender nonce")
+			return ErrNonceMax
 		}
 		return nil
 	}
