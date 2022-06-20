@@ -31,6 +31,7 @@ import (
 	"github.com/ethereum/go-ethereum/consensus/ethash"
 	"github.com/ethereum/go-ethereum/consensus/layer2"
 	"github.com/ethereum/go-ethereum/core"
+	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/eth/downloader"
 	"github.com/ethereum/go-ethereum/eth/gasprice"
 	"github.com/ethereum/go-ethereum/ethdb"
@@ -214,7 +215,8 @@ func CreateConsensusEngine(stack *node.Node, chainConfig *params.ChainConfig, co
 		return clique.New(chainConfig.Clique, db)
 	}
 	if chainConfig.Layer2Instant != nil {
-		return layer2.New(chainConfig.Layer2Instant, db)
+		signer := types.LatestSigner(chainConfig)
+		return layer2.New(chainConfig.Layer2Instant, stack.RollupInfo.RollupDb, signer)
 	}
 	// Otherwise assume proof-of-work
 	switch config.PowMode {

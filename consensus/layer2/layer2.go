@@ -1,34 +1,86 @@
 package layer2
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"math/big"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/consts"
 	"github.com/ethereum/go-ethereum/consensus"
 	"github.com/ethereum/go-ethereum/core/state"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/ethdb"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/layer2"
+	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/params"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/ethereum/go-ethereum/trie"
+	"github.com/ontology-layer-2/optimistic-rollup/store"
+	"github.com/ontology-layer-2/optimistic-rollup/store/schema"
 )
 
 type Layer2Instant struct {
+	Store               *store.Storage
+	Signer              types.Signer
 	Timestamp           uint64
 	L2CrossLayerWitness common.Address
 	FeeCollector        common.Address
 }
 
-func New(config *params.Layer2InstantConfig, db ethdb.Database) *Layer2Instant {
+func New(config *params.Layer2InstantConfig, db schema.PersistStore, signer types.Signer) *Layer2Instant {
 	return &Layer2Instant{
+		Store:               store.NewStorage(db),
+		Signer:              signer,
 		Timestamp:           uint64(time.Now().Unix()),
 		L2CrossLayerWitness: config.L2CrossLayerWitness,
 		FeeCollector:        config.FeeCollector,
 	}
+}
+
+func (self *Layer2Instant) ValidateTx(queueStartIndex uint64, queueNum uint64, txs []*types.Transaction) error {
+
+	inputStore := self.Store.InputChain()
+	log.Debug("l2 validate tx")
+	queues := txs[:queueNum]
+
+	for i, queue := range queues {
+		if !queue.Protected() { //should never happen
+			panic(1)
+		}
+		h := queue.Hash()
+		recorded, err := inputStore.GetEnqueuedTransaction(queueStartIndex + uint64(i))
+		if err != nil {
+			return err
+		}
+		expected := crypto.Keccak256Hash(recorded.RlpTx)
+		expectedtx := recorded.MustToTransaction()
+		if !bytes.Equal(expected.Bytes(), h.Bytes()) {
+			return fmt.Errorf("in consistent queue hash, expected %s, got %s", expectedtx, queue)
+		}
+	}
+
+	//check origin l2 tx
+	l2Txs := txs[queueNum:]
+	for _, tx := range l2Txs {
+		if !tx.Protected() {
+			return fmt.Errorf("unprotected tx")
+		}
+		if tx.IsQueue() {
+			return fmt.Errorf("wired queue in l2 txs")
+		}
+		sender, err := self.Signer.Sender(tx)
+		if err != nil {
+			return err
+		}
+		if sender == consts.L1CrossLayerWitnessSender {
+			return fmt.Errorf("malicious sender: %s, only l1 cross layer tx allowed", sender)
+		}
+	}
+
+	return nil
 }
 
 func (self *Layer2Instant) Author(header *types.Header) (common.Address, error) {
@@ -147,7 +199,6 @@ func (self *Layer2Instant) FinalizeAndAssemble(chain consensus.ChainHeaderReader
 		header.Nonce = types.EncodeNonce(mmrSize)
 		header.MixDigest = mmrRoot
 	}
-
 	// Assemble and return the final block for sealing
 	return types.NewBlock(header, txs, nil, receipts, trie.NewStackTrie(nil)), nil
 }

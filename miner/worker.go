@@ -19,6 +19,7 @@ package miner
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"math/big"
 	"sync"
 	"sync/atomic"
@@ -1061,7 +1062,6 @@ func (w *worker) commitNewWork(interrupt *int32, noempty bool, timestamp int64) 
 		w.updateSnapshot()
 		return
 	}
-
 	//should run enqueue tx first to ensure tx will not failed because of reaching block gasLimit
 	if w.layer2Engine() != nil && len(queueTxs.Txs) > 0 {
 		w.current.QueueBlock = queueBlockInfo
@@ -1076,7 +1076,7 @@ func (w *worker) commitNewWork(interrupt *int32, noempty bool, timestamp int64) 
 			if err != nil { //should never happen
 				panic(err)
 			}
-			queue[sender] = append(queue[sender], tx)
+			queue[sender] = append(queue[sender], tx) //only add one tx to queue,keep queue tx in same order
 			txs := types.NewTransactionsByPriceAndNonce(w.current.signer, queue, header.BaseFee)
 			if w.commitTransactions(txs, w.coinbase, interrupt) {
 				return
@@ -1126,6 +1126,18 @@ func (w *worker) commit(uncles []*types.Header, interval func(), update bool, st
 	block, err := w.engine.FinalizeAndAssemble(w.chain, w.current.header, s, w.current.txs, uncles, receipts)
 	if err != nil {
 		return err
+	}
+	if w.layer2Engine() != nil {
+		queuStart := uint64(0)
+		queueNum := uint64(len(w.current.txs))
+		if w.current.QueueBlock == nil {
+			queueNum = 0
+		} else {
+			queuStart = w.current.QueueBlock.TotalEnqueuedTx - queueNum
+		}
+		if err := w.layer2Engine().ValidateTx(queuStart, queueNum, w.current.txs); err != nil {
+			return fmt.Errorf("validate tx failed %s", err)
+		}
 	}
 	if w.isRunning() {
 		if interval != nil {

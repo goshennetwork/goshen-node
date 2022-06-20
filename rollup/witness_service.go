@@ -90,7 +90,7 @@ func (self *WitnessService) Work() error {
 	//now store witnessed state
 	writer := self.store.Writer()
 	writer.L2Client().StoreTotalCheckedBatchNum(checkedBatchNum)
-	writer.L2Client().StoreCheckedBlockNum(checkedBlockNum, checkedBlockNum)
+	writer.L2Client().StoreCheckedBlockNum(checkedBatchNum, checkedBlockNum)
 	writer.Commit()
 	return nil
 }
@@ -104,7 +104,7 @@ func genCheckerHash(txHash [32]byte, timestamp uint64, index uint64) [32]byte {
 	return crypto.Keccak256Hash(s.Bytes())
 }
 
-//check check batch tx with local tx, now assume sequencer is honest so txs should be all in order at local chain.
+// check batch tx with local tx, now assume sequencer is honest so txs should be all in order at local chain.
 func (self *WitnessService) check(batch *binding.RollupInputBatches, batchIndex uint64) (bool, uint64) {
 	inputChainStore := self.store.InputChain()
 	checker := &utils2.HashChecker{}

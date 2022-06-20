@@ -18,7 +18,7 @@ https://camo.githubusercontent.com/915b7be44ada53c290eb157634330494ebe3e30a/6874
 
 #fixme: maybe do not need to set etherbase, it's set by l2 consensus?
 # flowing has some implicit params, details see ./geth --help
-./geth --l2 --datadir chaindata/ --mine --miner.etherbase "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266" --verbosity=5 --gcmode archive --http --http.addr 0.0.0.0 --ws --ws.addr 0.0.0.0 console
+./geth --l2 --datadir chaindata/ --mine --miner.etherbase "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266" --verbosity=5 --gcmode archive --http --http.addr 0.0.0.0 --http.port 23333 --ws --ws.addr 0.0.0.0 console
 ```
 
 ### differ between l2 client and ordinary geth client:

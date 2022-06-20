@@ -30,6 +30,7 @@ var Modules = map[string]string{
 	"txpool":   TxpoolJs,
 	"les":      LESJs,
 	"vflux":    VfluxJs,
+	"l2":       L2Js,
 }
 
 const CliqueJs = `
@@ -115,6 +116,19 @@ web3._extend({
 		}),
 	]
 });
+`
+
+const L2Js = `
+web3._extend.Method({
+property: 'l2',
+methods: [
+	new web3._extend.Method({
+		name: 'getPendingTxBatches',
+		call: 'l2_getPendingTxBatches',
+		params: 0
+	})
+]
+})
 `
 
 const AdminJs = `

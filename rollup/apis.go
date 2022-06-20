@@ -1,11 +1,11 @@
 package rollup
 
 import (
-	"fmt"
-
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/ontology-layer-2/optimistic-rollup/binding"
+	"github.com/ontology-layer-2/optimistic-rollup/store/schema"
 )
 
 type L2Api struct {
@@ -27,34 +27,64 @@ func newUploadApi(rollupBackend *RollupBackend) *L2Api {
 	return &L2Api{rollupBackend}
 }
 
-// fixme: now only support one sequencer.
-func (self *L2Api) GetPendingTxBatches() (*binding.RollupInputBatches, error) {
-	if !self.IsSynced() {
-		return nil, fmt.Errorf("syncing")
-	}
+type GlobalInfo struct {
+	//total batch num in l1 RollupInputChain contract
+	L1InputInfo schema.InputChainInfo
+	//l2 client have checked tx batch num
+	L2CheckedBatchNum uint64
+	//the total block num l2 already checked,start from 1, because genesis block do not need to check
+	L2CheckedBlockNum uint64
+	//l2 client head block num
+	L2HeadBlockNumber   uint64
+	L1SyncedBlockNumber uint64
+	L1SyncedTimestamp   *uint64
+}
+
+func (self *L2Api) GlobalInfo() *GlobalInfo {
+	//maybe syncing should also return some info
+	var ret GlobalInfo
 	l2Store := self.store.L2Client()
 	info := self.store.InputChain().GetInfo()
-	checkedBatchNum := l2Store.GetTotalCheckedBatchNum()
-	if checkedBatchNum < info.TotalBatches {
-		return nil, fmt.Errorf("nothing to append.maybe waitting to check")
+	ret.L1InputInfo = *info
+	ret.L2CheckedBatchNum = l2Store.GetTotalCheckedBatchNum()
+	ret.L2CheckedBlockNum = l2Store.GetTotalCheckedBlockNum(info.TotalBatches)
+	ret.L2HeadBlockNumber = self.ethBackend.BlockChain().CurrentHeader().Number.Uint64()
+	ret.L1SyncedBlockNumber = self.store.GetLastSyncedL1Height()
+	ret.L1SyncedTimestamp = self.store.GetLastSyncedL1Timestamp()
+	return &ret
+}
+
+//fixme: now only support one sequencer.
+// GetPendingTxBatches return the batchCode, which is params in AppendBatch, set func selector in front of it to invoke
+//append input batch.
+func (self *L2Api) GetPendingTxBatches() []byte {
+	if !self.IsSynced() {
+		log.Warn("syncing")
+		return nil
 	}
-	l2BlockNum := l2Store.GetTotalCheckedBlockNum(info.TotalBatches)
-	localNumber := self.ethBackend.BlockChain().CurrentHeader().Number.Uint64()
-	if l2BlockNum > localNumber {
+	info := self.GlobalInfo()
+	if info.L2CheckedBatchNum < info.L1InputInfo.TotalBatches { //should check all the batch first
+		log.Warn("nothing to append")
+		return nil
+	}
+	l2CheckedBlockNum, l2HeadBlockNumber := info.L2CheckedBlockNum, info.L2CheckedBlockNum
+	if l2CheckedBlockNum > info.L2HeadBlockNumber {
 		//local have nothing to upload
-		return nil, fmt.Errorf("nothing need to upload total uploaded block: %d, local block number: %d", l2BlockNum, localNumber)
+		log.Warn("nothing need to upload ", "total checked block", l2CheckedBlockNum, "local block number", l2HeadBlockNumber)
+		return nil
 	}
-	floor := localNumber - l2BlockNum + 1
+	floor := l2CheckedBlockNum - l2HeadBlockNumber + 1
 	//todo: now simple limit upload size.should limit calldata size instead
 	if floor > 512 {
 		floor = 512
 	}
-	batches := &binding.RollupInputBatches{QueueStart: info.PendingQueueIndex}
+	batches := &binding.RollupInputBatches{QueueStart: info.L1InputInfo.PendingQueueIndex}
 	for i := uint64(0); i < floor; i++ {
-		blockNumber := i + l2BlockNum
+		blockNumber := i + l2CheckedBlockNum
 		block := self.ethBackend.BlockChain().GetBlockByNumber(blockNumber)
-		if block == nil {
-			return nil, fmt.Errorf("no block exist: %d", blockNumber)
+		if block == nil { //should not happen except chain reorg
+			log.Warn("nil block", "blockNumber", blockNumber)
+			return nil
 		}
 		txs := block.Transactions()
 		l2txs, queueNum := FilterOutQueues(txs)
@@ -63,7 +93,11 @@ func (self *L2Api) GetPendingTxBatches() (*binding.RollupInputBatches, error) {
 			batches.SubBatches = append(batches.SubBatches, &binding.SubBatch{block.Time(), l2txs})
 		}
 	}
-	return batches, nil
+	if len(batches.SubBatches) == 0 { //no sub batch will failed when append batch
+		log.Warn("no subBatch")
+		return nil
+	}
+	return batches.Encode()
 }
 
 func FilterOutQueues(txs []*types.Transaction) ([]*types.Transaction, uint64) {
