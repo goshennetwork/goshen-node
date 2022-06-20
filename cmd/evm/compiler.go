@@ -22,7 +22,6 @@ import (
 	"io/ioutil"
 
 	"github.com/ethereum/go-ethereum/cmd/evm/internal/compiler"
-
 	"gopkg.in/urfave/cli.v1"
 )
 

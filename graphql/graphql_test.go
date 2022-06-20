@@ -35,7 +35,6 @@ import (
 	"github.com/ethereum/go-ethereum/eth/ethconfig"
 	"github.com/ethereum/go-ethereum/node"
 	"github.com/ethereum/go-ethereum/params"
-
 	"github.com/stretchr/testify/assert"
 )
 

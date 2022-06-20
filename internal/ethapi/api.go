@@ -44,6 +44,7 @@ import (
 	"github.com/ethereum/go-ethereum/p2p"
 	"github.com/ethereum/go-ethereum/params"
 	"github.com/ethereum/go-ethereum/rlp"
+	"github.com/ethereum/go-ethereum/rollup"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/tyler-smith/go-bip39"
 )
@@ -1468,6 +1469,74 @@ func AccessList(ctx context.Context, b Backend, blockNrOrHash rpc.BlockNumberOrH
 		}
 		prevTracer = tracer
 	}
+}
+
+type RollupAPI struct {
+	b      Backend
+	rollup *rollup.RollupBackend
+}
+
+func NewRollUpAPI(b Backend, r *rollup.RollupBackend) *RollupAPI {
+	return &RollupAPI{b: b, rollup: r}
+}
+
+// InputBatchNumber return the latest input batch number of L1
+func (s *RollupAPI) InputBatchNumber() (uint64, error) {
+	info, err := s.rollup.LatestInputBatchInfo()
+	if err != nil {
+		return 0, err
+	}
+	return info.TotalBatches, nil
+}
+
+// StateBatchNumber return the latest input batch number of L1
+func (s *RollupAPI) StateBatchNumber() (uint64, error) {
+	info, err := s.rollup.LatestStateBatchInfo()
+	if err != nil {
+		return 0, err
+	}
+	return info.TotalSize, nil
+}
+
+// GetBatch return the detail of batch input
+func (s *RollupAPI) GetBatch(batchNumber uint64, useDetail bool) (map[string]interface{}, error) {
+	batch, err := s.rollup.InputBatchByNumber(batchNumber)
+	if err != nil {
+		return nil, err
+	}
+	batchData, err := s.rollup.InputBatchDataByNumber(batchNumber)
+	if err != nil {
+		return nil, err
+	}
+	result := make(map[string]interface{}, 0)
+	result["sequencer"] = batch.Proposer.String()
+	result["batchNumber"] = hexutil.Uint64(batch.Index)
+	result["batchHash"] = batch.InputHash.String()
+	formatTx := func(tx *types.Transaction) (interface{}, error) {
+		return tx.Hash(), nil
+	}
+	if useDetail {
+		formatTx = func(tx *types.Transaction) (interface{}, error) {
+			tx, blockHash, blockNumber, index, err := s.b.GetTransaction(context.Background(), tx.Hash())
+			if err != nil {
+				return nil, err
+			}
+			// base fee is nil
+			return newRPCTransaction(tx, blockHash, blockNumber, index, nil, s.b.ChainConfig()), nil
+		}
+	}
+	transactions := make([]interface{}, 0)
+	for _, subBatchs := range batchData.SubBatches {
+		for _, tx := range subBatchs.Txs {
+			formatedTx, err := formatTx(tx)
+			if err != nil {
+				return nil, err
+			}
+			transactions = append(transactions, formatedTx)
+		}
+	}
+	result["transactions"] = transactions
+	return result, nil
 }
 
 // PublicTransactionPoolAPI exposes methods for the RPC interface

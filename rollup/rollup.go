@@ -8,6 +8,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/laizy/web3/jsonrpc"
+	"github.com/ontology-layer-2/optimistic-rollup/binding"
 	"github.com/ontology-layer-2/optimistic-rollup/store"
 	"github.com/ontology-layer-2/optimistic-rollup/store/schema"
 )
@@ -94,4 +95,29 @@ func (self *RollupBackend) GetPendingQueue(parentBlock uint64, gasLimit uint64) 
 	headQueue.CurrEnqueueBlock = parentBlock + 1
 	headQueue.TotalEnqueuedTx += uint64(len(queuesInfo.Txs))
 	return queuesInfo, headQueue, nil
+}
+
+func (self *RollupBackend) LatestInputBatchInfo() (*schema.InputChainInfo, error) {
+	return self.store.InputChain().GetInfo(), nil
+}
+
+func (self *RollupBackend) LatestStateBatchInfo() (*schema.StateChainInfo, error) {
+	return self.store.StateChain().GetInfo(), nil
+}
+
+func (self *RollupBackend) InputBatchByNumber(index uint64) (*schema.AppendedTransaction, error) {
+	return self.store.InputChain().GetAppendedTransaction(index)
+}
+
+func (self *RollupBackend) InputBatchDataByNumber(index uint64) (*binding.RollupInputBatches, error) {
+	data, err := self.store.InputChain().GetSequencerBatchData(index)
+	if err != nil {
+		return nil, err
+	}
+	if len(data) == 0 {
+		return nil, schema.ErrNotFound
+	}
+	batches := &binding.RollupInputBatches{}
+	err = batches.Decode(data)
+	return batches, err
 }
