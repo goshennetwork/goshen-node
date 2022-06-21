@@ -513,6 +513,8 @@ github.com/ontio/ontology-crypto v1.0.9/go.mod h1:h/jeqqb9Ma/Leszxqh6zY3eTF2yks4
 github.com/ontio/ontology-eventbus v0.9.1 h1:nt3AXWx3gOyqtLiU4EwI92Yc4ik/pWHu9xRK15uHSOs=
 github.com/ontio/ontology-eventbus v0.9.1/go.mod h1:hCQIlbdPckcfykMeVUdWrqHZ8d30TBdmLfXCVWGkYhM=
 github.com/ontio/wagon v0.4.1/go.mod h1:oTPdgWT7WfPlEyzVaHSn1vQPMSbOpQPv+WphxibWlhg=
+github.com/ontology-layer-2/optimistic-rollup v0.0.0-20220620085602-9edc99a5dfa6 h1:vRgYoCZnfAOMpkiG4/tF31ERJ1XuH2Pah2oKusFSSUA=
+github.com/ontology-layer-2/optimistic-rollup v0.0.0-20220620085602-9edc99a5dfa6/go.mod h1:5VR6FVEmeDr1I7Nm7J78Gu36ERpJTcSPNo+f9OLS0Cc=
 github.com/opencontainers/go-digest v1.0.0/go.mod h1:0JzlMkj0TRzQZfJkVvzbP0HBR3IKzErnv2BNG4W4MAM=
 github.com/opencontainers/image-spec v1.0.1/go.mod h1:BtxoFyWECRxE4U/7sNtV5W15zMzWCbyJoFRP3s7yZA0=
 github.com/opencontainers/runc v1.0.1/go.mod h1:aTaHFFwQXuA71CiyxOdFFIorAoemI04suvGRQFzWTD0=

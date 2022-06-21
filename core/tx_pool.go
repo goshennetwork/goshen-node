@@ -46,13 +46,13 @@ const (
 	// takes up based on its size. The slots are used as DoS protection, ensuring
 	// that validating a new transaction remains a constant operation (in reality
 	// O(maxslots), where max slots are 4 currently).
-	txSlotSize = 32 * 1024
+	txSlotSize = consts.MaxL2TxSize / 4
 
 	// txMaxSize is the maximum size a single transaction can have. This field has
 	// non-trivial consequences: larger transactions are significantly harder and
 	// more expensive to propagate; larger transactions also take more resources
 	// to validate whether they fit into the pool or not.
-	txMaxSize = 4 * txSlotSize // 128KB
+	txMaxSize = consts.MaxL2TxSize
 )
 
 var (

@@ -1,6 +1,7 @@
 package rollup
 
 import (
+	"github.com/ethereum/go-ethereum/common/consts"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/rpc"
@@ -73,16 +74,17 @@ func (self *L2Api) GetPendingTxBatches() []byte {
 		log.Warn("nothing need to upload ", "total checked block", l2CheckedBlockNum, "local block number", l2HeadBlockNumber)
 		return nil
 	}
-	floor := l2HeadBlockNumber - l2CheckedBlockNum + 1
+	maxBlockes := l2HeadBlockNumber - l2CheckedBlockNum + 1
 	//todo: now simple limit upload size.should limit calldata size instead
-	if floor > 512 {
-		floor = 512
+	if maxBlockes > 512 {
+		maxBlockes = 512
 	}
 	batches := &binding.RollupInputBatches{QueueStart: info.L1InputInfo.PendingQueueIndex, BatchIndex: info.L2CheckedBatchNum}
-	for i := uint64(0); i < floor; i++ {
+	var batchesData []byte
+	for i := uint64(0); i < maxBlockes; i++ {
 		blockNumber := i + l2CheckedBlockNum
 		block := self.ethBackend.BlockChain().GetBlockByNumber(blockNumber)
-		if block == nil { //should not happen except chain reorg
+		if block == nil { // should not happen except chain reorg
 			log.Warn("nil block", "blockNumber", blockNumber)
 			return nil
 		}
@@ -90,15 +92,15 @@ func (self *L2Api) GetPendingTxBatches() []byte {
 		l2txs, queueNum := FilterOutQueues(txs)
 		batches.QueueNum += queueNum
 		if len(l2txs) > 0 {
-			batches.SubBatches = append(batches.SubBatches, &binding.SubBatch{block.Time(), l2txs})
+			batches.SubBatches = append(batches.SubBatches, &binding.SubBatch{Timestamp: block.Time(), Txs: l2txs})
+		}
+		newBatch := batches.Encode()
+		if len(newBatch)+4 < consts.MaxRollupInputBatchSize {
+			batchesData = newBatch
 		}
 	}
-	if len(batches.SubBatches) == 0 { //no sub batch will failed when append batch
-		log.Warn("no subBatch")
-		return nil
-	}
-	log.Info("batch len", "len", len(batches.Encode()))
-	return batches.Encode()
+	log.Info("generate batch", "index", batches.BatchIndex, "size", len(batchesData))
+	return batchesData
 }
 
 func FilterOutQueues(txs []*types.Transaction) ([]*types.Transaction, uint64) {

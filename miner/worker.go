@@ -27,6 +27,7 @@ import (
 
 	mapset "github.com/deckarep/golang-set"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/consts"
 	"github.com/ethereum/go-ethereum/consensus"
 	"github.com/ethereum/go-ethereum/consensus/layer2"
 	"github.com/ethereum/go-ethereum/consensus/misc"
@@ -96,6 +97,17 @@ type environment struct {
 	txs        []*types.Transaction
 	receipts   []*types.Receipt
 	QueueBlock *schema.ChainedEnqueueBlockInfo
+}
+
+func (env *environment) TotalNonQueueTxSize() uint64 {
+	sum := uint64(0)
+	for _, tx := range env.txs {
+		if tx.IsQueue() == false {
+			sum += uint64(tx.Size())
+		}
+	}
+
+	return sum
 }
 
 // task contains all information for consensus engine sealing and result submitting.
@@ -865,6 +877,10 @@ func (w *worker) commitTransactions(txs *types.TransactionsByPriceAndNonce, coin
 		if tx == nil {
 			break
 		}
+		// make sure not generate too large block
+		if !tx.IsQueue() && w.current.TotalNonQueueTxSize()+uint64(tx.Size())+5*1024 > consts.MaxRollupInputBatchSize {
+			break
+		}
 		// Error may be ignored here. The error has already been checked
 		// during transaction acceptance is the transaction pool.
 		//
@@ -1070,7 +1086,6 @@ func (w *worker) commitNewWork(interrupt *int32, noempty bool, timestamp int64) 
 				log.Error("queue nonce wired", "nonce", tx.Nonce(), "hash", tx.Hash())
 				return
 			}
-			//todo: cache
 			queue := make(map[common.Address]types.Transactions)
 			sender, err := w.current.signer.Sender(tx)
 			if err != nil { //should never happen
