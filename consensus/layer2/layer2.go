@@ -56,9 +56,8 @@ func (self *Layer2Instant) ValidateTx(queueStartIndex uint64, queueNum uint64, t
 			return err
 		}
 		expected := crypto.Keccak256Hash(recorded.RlpTx)
-		expectedtx := recorded.MustToTransaction()
 		if !bytes.Equal(expected.Bytes(), h.Bytes()) {
-			return fmt.Errorf("in consistent queue hash, expected %s, got %s", expectedtx, queue)
+			return fmt.Errorf("inconsistent queue hash, expected %s, got %s", expected, queue)
 		}
 	}
 

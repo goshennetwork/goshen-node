@@ -19,7 +19,6 @@ require (
 	github.com/docker/docker v1.4.2-0.20180625184442-8e610b2b55bf
 	github.com/dop251/goja v0.0.0-20211011172007-d99e4b8cbf48
 	github.com/edsrzf/mmap-go v1.0.0
-	github.com/emirpasic/gods v1.12.0
 	github.com/fatih/color v1.7.0
 	github.com/fjl/memsize v0.0.0-20190710130421-bcb5799ab5e5
 	github.com/gballet/go-libpcsclite v0.0.0-20190607065134-2772fd86a8ff
@@ -43,12 +42,12 @@ require (
 	github.com/julienschmidt/httprouter v1.2.0
 	github.com/karalabe/usb v0.0.0-20211005121534-4c5740d64559
 	github.com/laizy/log v0.1.0
-	github.com/laizy/web3 v0.1.13
+	github.com/laizy/web3 v0.1.14-0.20220620032630-b9ded53f7c78
 	github.com/mattn/go-colorable v0.1.12
 	github.com/mattn/go-isatty v0.0.14
 	github.com/naoina/toml v0.1.2-0.20170918210437-9fafd6967416
 	github.com/olekukonko/tablewriter v0.0.5
-	github.com/ontology-layer-2/optimistic-rollup v0.0.0-20220616105640-fb88730afec3
+	github.com/ontology-layer-2/optimistic-rollup v0.0.0-20220620085602-9edc99a5dfa6
 	github.com/peterh/liner v1.1.1-0.20190123174540-a2c9a5303de7
 	github.com/prometheus/tsdb v0.7.1
 	github.com/rjeczalik/notify v0.9.1

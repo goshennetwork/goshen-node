@@ -67,18 +67,18 @@ func (self *L2Api) GetPendingTxBatches() []byte {
 		log.Warn("nothing to append")
 		return nil
 	}
-	l2CheckedBlockNum, l2HeadBlockNumber := info.L2CheckedBlockNum, info.L2CheckedBlockNum
-	if l2CheckedBlockNum > info.L2HeadBlockNumber {
+	l2CheckedBlockNum, l2HeadBlockNumber := info.L2CheckedBlockNum, info.L2HeadBlockNumber
+	if l2CheckedBlockNum > l2HeadBlockNumber {
 		//local have nothing to upload
 		log.Warn("nothing need to upload ", "total checked block", l2CheckedBlockNum, "local block number", l2HeadBlockNumber)
 		return nil
 	}
-	floor := l2CheckedBlockNum - l2HeadBlockNumber + 1
+	floor := l2HeadBlockNumber - l2CheckedBlockNum + 1
 	//todo: now simple limit upload size.should limit calldata size instead
 	if floor > 512 {
 		floor = 512
 	}
-	batches := &binding.RollupInputBatches{QueueStart: info.L1InputInfo.PendingQueueIndex}
+	batches := &binding.RollupInputBatches{QueueStart: info.L1InputInfo.PendingQueueIndex, BatchIndex: info.L2CheckedBatchNum}
 	for i := uint64(0); i < floor; i++ {
 		blockNumber := i + l2CheckedBlockNum
 		block := self.ethBackend.BlockChain().GetBlockByNumber(blockNumber)
@@ -97,6 +97,7 @@ func (self *L2Api) GetPendingTxBatches() []byte {
 		log.Warn("no subBatch")
 		return nil
 	}
+	log.Info("batch len", "len", len(batches.Encode()))
 	return batches.Encode()
 }
 
