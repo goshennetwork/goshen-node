@@ -1539,6 +1539,27 @@ func (s *RollupAPI) GetBatch(batchNumber uint64, useDetail bool) (map[string]int
 	return result, nil
 }
 
+type RPCBatchState struct {
+	Index     hexutil.Uint64
+	Proposer  common.Address
+	Timestamp hexutil.Uint64
+	BlockHash common.Hash
+}
+
+// GetBatchState return the state of batch input
+func (s *RollupAPI) GetBatchState(batchNumber uint64) (*RPCBatchState, error) {
+	batchState, err := s.rollup.BatchState(batchNumber)
+	if err != nil {
+		return nil, err
+	}
+	return &RPCBatchState{
+		Index:     hexutil.Uint64(batchState.Index),
+		Proposer:  common.Address(batchState.Proposer),
+		Timestamp: hexutil.Uint64(batchState.Timestamp),
+		BlockHash: common.Hash(batchState.BlockHash),
+	}, nil
+}
+
 // PublicTransactionPoolAPI exposes methods for the RPC interface
 type PublicTransactionPoolAPI struct {
 	b         Backend

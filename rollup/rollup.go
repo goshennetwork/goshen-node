@@ -121,3 +121,7 @@ func (self *RollupBackend) InputBatchDataByNumber(index uint64) (*binding.Rollup
 	err = batches.Decode(data)
 	return batches, err
 }
+
+func (self *RollupBackend) BatchState(index uint64) (*schema.RollupStateBatchInfo, error) {
+	return self.store.StateChain().GetState(index)
+}
