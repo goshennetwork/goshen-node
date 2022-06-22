@@ -45,33 +45,21 @@ func (self *RollupBackend) IsSynced() bool {
 	return syncedHeight+6 >= l1Height
 }
 
-func (self *RollupBackend) StoreAndSetExecutedNum(totalQueueChain *schema.ChainedEnqueueBlockInfo) {
-	writer := self.store.Writer()
-	writer.L2Client().StoreExecutedQueue(totalQueueChain.CurrEnqueueBlock, totalQueueChain)
-	writer.L2Client().StoreHeadExecutedQueueBlock(totalQueueChain)
-	writer.Commit()
-}
-
-func (self *RollupBackend) GetPendingQueue(parentBlock uint64, gasLimit uint64) (*QueuesWithContext,
-	*schema.ChainedEnqueueBlockInfo, error) {
+func (self *RollupBackend) GetPendingQueue(totalExecutedQueueNum uint64, gasLimit uint64) (*QueuesWithContext, error) {
 	if !self.IsSynced() {
-		return nil, nil, errors.New("not synced yet")
+		return nil, errors.New("not synced yet")
 	}
 	l1Time := self.store.GetLastSyncedL1Timestamp()
 	if l1Time == nil {
-		return nil, nil, fmt.Errorf("no synced l1 timestamp")
-	}
-	headQueue := self.store.L2Client().GetHeadExecutedQueueBlock()
-	if parentBlock < headQueue.CurrEnqueueBlock { //should never happen
-		panic(1)
+		return nil, fmt.Errorf("no synced l1 timestamp")
 	}
 	queuesInfo := &QueuesWithContext{}
 	usedGas := uint64(0)
-	pendingQueueIndex := headQueue.TotalEnqueuedTx
+	pendingQueueIndex := totalExecutedQueueNum
 	for {
 		enqueuedEvent, err := self.store.InputChain().GetEnqueuedTransaction(pendingQueueIndex)
 		if err != nil && !errors.Is(err, schema.ErrNotFound) {
-			return nil, nil, fmt.Errorf("no pending queue")
+			return nil, fmt.Errorf("no pending queue")
 		}
 		if enqueuedEvent == nil {
 			break
@@ -91,10 +79,8 @@ func (self *RollupBackend) GetPendingQueue(parentBlock uint64, gasLimit uint64) 
 	if len(queuesInfo.Txs) == 0 {
 		queuesInfo.Timestamp = *l1Time
 	}
-	headQueue.PrevEnqueueBlock = headQueue.CurrEnqueueBlock
-	headQueue.CurrEnqueueBlock = parentBlock + 1
-	headQueue.TotalEnqueuedTx += uint64(len(queuesInfo.Txs))
-	return queuesInfo, headQueue, nil
+
+	return queuesInfo, nil
 }
 
 func (self *RollupBackend) LatestInputBatchInfo() (*schema.InputChainInfo, error) {

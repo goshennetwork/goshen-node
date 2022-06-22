@@ -21,4 +21,6 @@ const TxBaseSize = 213
 const MaxL1TxDataSize = MaxL1TxSize - TxBaseSize
 const MaxRollupInputBatchSize = MaxL1TxSize*48/128 - TxBaseSize // 48KB
 
+const GenesisDifficulty = 1
+
 var L1CrossLayerWitnessSender = common.HexToAddress("0x7E5F4552091A69125d5DfCb7b8C2659029395Bdf")

@@ -158,7 +158,9 @@ func (self *Layer2Instant) Prepare(chain consensus.ChainHeaderReader, header *ty
 		return errors.New("header's timestamp must be set")
 	}
 	header.Coinbase = self.FeeCollector
-	header.Difficulty = big.NewInt(1)
+	if header.Difficulty == nil {
+		return fmt.Errorf("difficulty must set in advance")
+	}
 	header.Extra = nil
 	currNumber := header.Number.Uint64()
 	parent := chain.GetHeader(header.ParentHash, currNumber-1)
@@ -239,7 +241,7 @@ func (self *Layer2Instant) SealHash(header *types.Header) common.Hash {
 // CalcDifficulty is the difficulty adjustment algorithm. It returns the difficulty
 // that a new block should have.
 func (self *Layer2Instant) CalcDifficulty(chain consensus.ChainHeaderReader, time uint64, parent *types.Header) *big.Int {
-	return big.NewInt(1)
+	panic("never used")
 }
 
 // APIs returns the RPC APIs this consensus engine provides.

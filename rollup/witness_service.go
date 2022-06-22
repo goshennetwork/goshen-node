@@ -13,7 +13,6 @@ import (
 	"github.com/ontology-layer-2/optimistic-rollup/binding"
 	"github.com/ontology-layer-2/optimistic-rollup/store/schema"
 	sync_service "github.com/ontology-layer-2/optimistic-rollup/sync-service"
-	utils2 "github.com/ontology-layer-2/optimistic-rollup/utils"
 )
 
 type TxsSigWithContext struct {
@@ -107,34 +106,41 @@ func genCheckerHash(txHash [32]byte, timestamp uint64, index uint64) [32]byte {
 // check batch tx with local tx, now assume sequencer is honest so txs should be all in order at local chain.
 func (self *WitnessService) check(batch *binding.RollupInputBatches, batchIndex uint64) (bool, uint64) {
 	inputChainStore := self.store.InputChain()
-	checker := &utils2.HashChecker{}
+	checker := &HashChecker{}
 	var orderTxs []TxsSigWithContext
 	txs := TxsSigWithContext{}
 	for i := uint64(0); i < batch.QueueNum; i++ {
 		enqueue, err := inputChainStore.GetEnqueuedTransaction(batch.QueueStart + i)
 		utils.Ensure(err)
 		sig, timestamp := crypto.Keccak256Hash(enqueue.RlpTx), enqueue.Timestamp
-		if i == 0 {
+		switch i {
+		case 0:
 			txs.Timestamp = timestamp
 			txs.Sigs = append(txs.Sigs, sig)
-		} else { //wrap different timestamp to a txsSigWithContext
-			if enqueue.Timestamp != txs.Timestamp {
+		case batch.QueueNum - 1: //last
+			if timestamp != txs.Timestamp {
+				//append first
 				orderTxs = append(orderTxs, txs)
-				txs = TxsSigWithContext{[]common.Hash{sig}, timestamp}
-			} else {
-				txs.Sigs = append(txs.Sigs, sig)
+				txs = TxsSigWithContext{nil, timestamp}
 			}
+			txs.Sigs = append(txs.Sigs, sig)
+			//append last txSig
+			orderTxs = append(orderTxs, txs)
+		default:
+			if timestamp != txs.Timestamp {
+				orderTxs = append(orderTxs, txs)
+				txs = TxsSigWithContext{nil, timestamp}
+			}
+			txs.Sigs = append(txs.Sigs, sig)
 		}
 	}
-	if batch.QueueNum > 0 {
-		//append last txSig
-		orderTxs = append(orderTxs, txs)
-	}
+
 	for _, batch := range batch.SubBatches {
 		txs = TxsSigWithContext{nil, batch.Timestamp}
 		for _, tx := range batch.Txs {
 			txs.Sigs = append(txs.Sigs, tx.Hash())
 		}
+		orderTxs = append(orderTxs, txs)
 	}
 	//sort in timestamp
 	sort.SliceStable(orderTxs, func(i, j int) bool {
@@ -145,24 +151,54 @@ func (self *WitnessService) check(batch *binding.RollupInputBatches, batchIndex 
 	for i := 0; i < len(orderTxs); i++ {
 		timestamp := orderTxs[i].Timestamp
 		for _, sig := range orderTxs[i].Sigs {
+			log.Debug("l2 local", "txHash", sig)
 			checker.Add(genCheckerHash(sig, timestamp, index))
 			index++
 		}
 	}
 	index = uint64(0)
 	blockNumber := self.store.L2Client().GetTotalCheckedBlockNum(batchIndex)
-	for i := uint64(0); i < checker.Num(); i++ {
+	for i := uint64(0); i < uint64(len(orderTxs)); i++ {
 		block := self.ethBackend.BlockChain().GetBlockByNumber(blockNumber + i)
 		timestamp := block.Time()
 		for _, tx := range block.Transactions() {
+			log.Debug("l2 local", "blockNumber", block.NumberU64(), "txHash", tx.Hash(), "txNonce", tx.Nonce())
 			checker.Meet(genCheckerHash(tx.Hash(), timestamp, index))
 			index++
 		}
 	}
-	return checker.IsEqual(), blockNumber + checker.Num()
+	return checker.IsEqual(), blockNumber + uint64(len(orderTxs))
 }
 
 func (self *WitnessService) Stop() error {
 	self.quit <- struct{}{}
 	return nil
+}
+
+type HashChecker struct {
+	task map[common.Hash]int
+	num  uint64
+}
+
+//Add add filter task, duplicated hash also recorded
+func (f *HashChecker) Add(h common.Hash) {
+	if f.task == nil {
+		f.task = make(map[common.Hash]int)
+	}
+	f.task[h]++
+}
+
+func (f *HashChecker) Meet(h common.Hash) {
+	f.task[h]--
+}
+
+func (f *HashChecker) IsEqual() bool {
+	for h, v := range f.task {
+		if v != 0 {
+			//debug
+			log.Error("debug wrong tx", "hash", h)
+			return false
+		}
+	}
+	return true
 }

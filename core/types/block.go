@@ -27,6 +27,7 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/consts"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/rlp"
 )
@@ -103,6 +104,16 @@ type headerMarshaling struct {
 // RLP encoding.
 func (h *Header) Hash() common.Hash {
 	return rlpHash(h)
+}
+
+// used in l2, get total executed queue num of a block
+func (h *Header) TotalExecutedQueueNum() uint64 {
+	return h.Difficulty.Uint64() - consts.GenesisDifficulty
+}
+
+//used in l2, get total executed queue num of a block
+func (h *Header) SetTotalExecutedQueueNum(totalQueueNum uint64) {
+	h.Difficulty = new(big.Int).SetUint64(totalQueueNum + consts.GenesisDifficulty)
 }
 
 var headerSize = common.StorageSize(reflect.TypeOf(Header{}).Size())

@@ -84,6 +84,10 @@ func New(eth Backend, config *Config, chainConfig *params.ChainConfig, mux *even
 	if _, ok := engine.(*layer2.Layer2Instant); ok {
 		log.Info("disable preseal for layer2Instant engine")
 		miner.DisablePreseal()
+		//check genesis block
+		if eth.BlockChain().Genesis().Header().TotalExecutedQueueNum() != 0 {
+			panic("genesis difficulty err in l2 mode")
+		}
 	}
 	miner.wg.Add(1)
 	go miner.update()
