@@ -125,6 +125,13 @@ func IntrinsicGas(data []byte, accessList types.AccessList, isContractCreation b
 	} else {
 		gas = params.TxGas
 	}
+	// Make sure we don't exceed uint64 for all data combinations
+	nonZeroGas := params.TxDataNonZeroGasFrontier
+	if isEIP2028 {
+		nonZeroGas = params.TxDataNonZeroGasEIP2028
+	}
+	nonZeroGas *= consts.IntrinsicGasFactor
+	gas += consts.TxBaseSize * nonZeroGas
 	// Bump the required gas by the amount of transactional data
 	if len(data) > 0 {
 		// Zero and non-zero bytes are priced differently
@@ -134,25 +141,21 @@ func IntrinsicGas(data []byte, accessList types.AccessList, isContractCreation b
 				nz++
 			}
 		}
-		// Make sure we don't exceed uint64 for all data combinations
-		nonZeroGas := params.TxDataNonZeroGasFrontier
-		if isEIP2028 {
-			nonZeroGas = params.TxDataNonZeroGasEIP2028
-		}
 		if (math.MaxUint64-gas)/nonZeroGas < nz {
 			return 0, ErrGasUintOverflow
 		}
 		gas += nz * nonZeroGas
 
 		z := uint64(len(data)) - nz
-		if (math.MaxUint64-gas)/params.TxDataZeroGas < z {
+		zeroGas := params.TxDataZeroGas * consts.IntrinsicGasFactor
+		if (math.MaxUint64-gas)/zeroGas < z {
 			return 0, ErrGasUintOverflow
 		}
-		gas += z * params.TxDataZeroGas
+		gas += z * zeroGas
 	}
 	if accessList != nil {
-		gas += uint64(len(accessList)) * params.TxAccessListAddressGas
-		gas += uint64(accessList.StorageKeys()) * params.TxAccessListStorageKeyGas
+		gas += uint64(len(accessList)) * params.TxAccessListAddressGas * consts.IntrinsicGasFactor
+		gas += uint64(accessList.StorageKeys()) * params.TxAccessListStorageKeyGas * consts.IntrinsicGasFactor
 	}
 	return gas, nil
 }
@@ -217,8 +220,9 @@ func (st *StateTransition) preCheck() error {
 	// Only check transactions that are not fake
 	if !st.msg.IsFake() {
 		//maybe use param in chainConfig
-		if st.evm.ChainConfig().Layer2Instant != nil && st.msg.Nonce() >= consts.InitialEnqueueNonceNonce { //l1 queue tx already checked in l1 contracats
-			log.Warn("state transition skipping nonce check with l1 queue tx")
+		if st.evm.ChainConfig().Layer2Instant != nil && st.msg.Nonce() >= consts.InitialEnqueueNonceNonce {
+			// l1 queue tx already checked in l1 contracats
+			log.Info("state transition skipping nonce check with l1 queue tx")
 		} else {
 			// Make sure this transaction's nonce is correct.
 			stNonce := st.state.GetNonce(st.msg.From())
@@ -308,6 +312,9 @@ func (st *StateTransition) TransitionDb() (*ExecutionResult, error) {
 	}
 	if st.gas < gas {
 		return nil, fmt.Errorf("%w: have %d, want %d", ErrIntrinsicGas, st.gas, gas)
+	}
+	if st.gas-gas > consts.MaxTxExecGas {
+		return nil, fmt.Errorf("%w: have %d, max %d", ErrExecGasTooHigh, st.gas-gas, consts.MaxTxExecGas)
 	}
 	st.gas -= gas
 

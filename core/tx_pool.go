@@ -662,6 +662,10 @@ func (pool *TxPool) validateTx(tx *types.Transaction, local bool) error {
 	if tx.Gas() < intrGas {
 		return ErrIntrinsicGas
 	}
+	if tx.Gas()-intrGas > consts.MaxTxExecGas {
+		return ErrExecGasTooHigh
+	}
+
 	return nil
 }
 
