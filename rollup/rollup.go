@@ -7,6 +7,7 @@ import (
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/log"
+	"github.com/laizy/web3"
 	"github.com/laizy/web3/jsonrpc"
 	"github.com/ontology-layer-2/optimistic-rollup/binding"
 	"github.com/ontology-layer-2/optimistic-rollup/store"
@@ -29,8 +30,8 @@ type RollupBackend struct {
 	L1Client *jsonrpc.Client
 }
 
-func NewBackend(ethBackend EthBackend, db schema.PersistStore, l1client *jsonrpc.Client) *RollupBackend {
-	return &RollupBackend{ethBackend, store.NewStorage(db), l1client}
+func NewBackend(ethBackend EthBackend, db schema.PersistStore, dbPath string, l1client *jsonrpc.Client) *RollupBackend {
+	return &RollupBackend{ethBackend, store.NewStorage(db, dbPath), l1client}
 }
 
 func (self *RollupBackend) IsSynced() bool {
@@ -110,4 +111,54 @@ func (self *RollupBackend) InputBatchDataByNumber(index uint64) (*binding.Rollup
 
 func (self *RollupBackend) BatchState(index uint64) (*schema.RollupStateBatchInfo, error) {
 	return self.store.StateChain().GetState(index)
+}
+
+func (self *RollupBackend) GetL1SentMessage(msgIndex uint64) (*schema.CrossLayerSentMessage, error) {
+	return self.store.L1CrossLayerWitness().GetSentMessage(msgIndex)
+}
+
+func (self *RollupBackend) GetL1MMRProof(msgIndex, size uint64) ([]web3.Hash, error) {
+	return self.store.L1CrossLayerWitness().GetL1MMRProof(msgIndex, size)
+}
+
+func (self *RollupBackend) GetL2BlockNumToBatchNum(blockNum uint64) uint64 {
+	upper := self.store.L2Client().GetTotalCheckedBatchNum()
+	lower := uint64(0)
+	i := (upper + lower) / 2
+	_block := uint64(0)
+	// find the closest batch
+	for {
+		_block = self.store.L2Client().GetTotalCheckedBlockNum(i)
+		if _block > blockNum {
+			upper = i
+		} else if _block < blockNum {
+			lower = i
+		} else {
+			break
+		}
+		if lower >= upper-1 {
+			break
+		}
+		i = (upper + lower) / 2
+	}
+	// closest higher
+	if _block >= blockNum {
+		return i
+	}
+
+	for {
+		i++
+		_block = self.store.L2Client().GetTotalCheckedBlockNum(i)
+		if _block > blockNum {
+			return i
+		}
+	}
+}
+
+func (self *RollupBackend) GetL2SentMessage(msgIndex uint64) (*schema.CrossLayerSentMessage, error) {
+	return self.store.L2CrossLayerWitness().GetSentMessage(msgIndex)
+}
+
+func (self *RollupBackend) GetL2MMRProof(msgIndex, size uint64) ([]web3.Hash, error) {
+	return self.store.L2CrossLayerWitness().GetL2MMRProof(msgIndex, size)
 }

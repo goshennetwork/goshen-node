@@ -30,9 +30,9 @@ type Layer2Instant struct {
 	FeeCollector        common.Address
 }
 
-func New(config *params.Layer2InstantConfig, db schema.PersistStore, signer types.Signer) *Layer2Instant {
+func New(config *params.Layer2InstantConfig, db schema.PersistStore, dbDir string, signer types.Signer) *Layer2Instant {
 	return &Layer2Instant{
-		Store:               store.NewStorage(db),
+		Store:               store.NewStorage(db, dbDir),
 		Signer:              signer,
 		Timestamp:           uint64(time.Now().Unix()),
 		L2CrossLayerWitness: config.L2CrossLayerWitness,

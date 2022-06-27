@@ -11,8 +11,8 @@ import (
 	"github.com/laizy/web3/utils"
 	"github.com/laizy/web3/utils/codec"
 	"github.com/ontology-layer-2/optimistic-rollup/binding"
+	"github.com/ontology-layer-2/optimistic-rollup/config"
 	"github.com/ontology-layer-2/optimistic-rollup/store/schema"
-	sync_service "github.com/ontology-layer-2/optimistic-rollup/sync-service"
 )
 
 type TxsSigWithContext struct {
@@ -22,11 +22,11 @@ type TxsSigWithContext struct {
 
 type WitnessService struct {
 	*RollupBackend
-	cfg  sync_service.Config
+	cfg  config.SyncConfig
 	quit chan struct{}
 }
 
-func NewWitnessService(backend *RollupBackend, cfg *sync_service.Config) *WitnessService {
+func NewWitnessService(backend *RollupBackend, cfg *config.SyncConfig) *WitnessService {
 	return &WitnessService{backend, *cfg, make(chan struct{})}
 }
 

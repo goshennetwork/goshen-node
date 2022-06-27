@@ -818,7 +818,7 @@ func setRollupConfig(ctx *cli.Context, cfg *node.Config) {
 	if ctx.GlobalBool(RollupEnableFlag.Name) {
 		//debug
 		log.Info("set rollup config to node.")
-		var syncConfig sync_service.Config
+		var syncConfig config.SyncConfig
 		utils.Ensure(utils.LoadJsonFile(ctx.GlobalString(RollupSyncConfigFile.Name), &syncConfig))
 		var contractsConfig config.Contracts
 		utils.Ensure(utils.LoadJsonFile(ctx.GlobalString(RollupContractsConfigFile.Name), &contractsConfig))
@@ -1765,14 +1765,14 @@ func RegisterEthService(stack *node.Node, cfg *ethconfig.Config) (ethapi.Backend
 	return backend.APIBackend, backend
 }
 
-func RegisterSyncService(stack *node.Node, cfg *sync_service.Config) {
+func RegisterSyncService(stack *node.Node, cfg *config.SyncConfig) {
 	syncService := sync_service.NewSyncService(stack.RollupInfo.RollupDb, stack.RollupInfo.L1Client, cfg)
 	//todo api registered here
 	//stack.RegisterAPIs()
 	stack.RegisterLifecycle(syncService)
 }
 
-func RegisterWitnessService(stack *node.Node, rollupBackend *rollup.RollupBackend, cfg *sync_service.Config) {
+func RegisterWitnessService(stack *node.Node, rollupBackend *rollup.RollupBackend, cfg *config.SyncConfig) {
 	witnessService := rollup.NewWitnessService(rollupBackend, cfg)
 	stack.RegisterLifecycle(witnessService)
 	//register upload api

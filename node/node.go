@@ -69,6 +69,7 @@ type Node struct {
 type RollupInfo struct {
 	//the all rollup db
 	RollupDb schema.PersistStore
+	DBPath   string
 	L1Client *jsonrpc.Client
 }
 

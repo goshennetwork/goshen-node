@@ -1560,6 +1560,95 @@ func (s *RollupAPI) GetBatchState(batchNumber uint64) (*RPCBatchState, error) {
 	}, nil
 }
 
+func (s *RollupAPI) GetL2MMRProof(msgIndex, size uint64) ([]common.Hash, error) {
+	proof, err := s.rollup.GetL2MMRProof(msgIndex, size)
+	if err != nil {
+		return nil, err
+	}
+	result := make([]common.Hash, len(proof))
+	for i := range proof {
+		result[i] = common.Hash(proof[i])
+	}
+	return result, nil
+}
+
+type L1RelayMsgParams struct {
+	Target       common.Address `json:"target"`
+	Sender       common.Address `json:"sender"`
+	Message      hexutil.Bytes  `json:"message"`
+	MessageIndex uint64         `json:"messageIndex"`
+	RLPHeader    hexutil.Bytes  `json:"rlpHeader"`
+	StateInfo    *RPCBatchState `json:"stateInfo"`
+	Proof        []common.Hash  `json:"proof"`
+}
+
+func (s *RollupAPI) GetL1RelayMsgParams(msgIndex uint64) (*L1RelayMsgParams, error) {
+	result := &L1RelayMsgParams{MessageIndex: msgIndex}
+	msg, err := s.rollup.GetL2SentMessage(msgIndex)
+	if err != nil {
+		return nil, err
+	}
+	result.Target = common.Address(msg.Target)
+	result.Sender = common.Address(msg.Sender)
+	result.Message = msg.Message
+	batchNum := s.rollup.GetL2BlockNumToBatchNum(msg.BlockNumber)
+	stateInfo, err := s.GetBatchState(batchNum)
+	if err != nil {
+		return nil, err
+	}
+	result.StateInfo = stateInfo
+	header, err := s.b.HeaderByHash(context.Background(), stateInfo.BlockHash)
+	if err != nil {
+		return nil, err
+	}
+	rlpHeader, err := rlp.EncodeToBytes(header)
+	if err != nil {
+		return nil, fmt.Errorf("encode header, %s", err)
+	}
+	result.RLPHeader = rlpHeader
+	// header.nonce is MMR size
+	proofs, err := s.rollup.GetL2MMRProof(msgIndex, header.Nonce.Uint64())
+	if err != nil {
+		return nil, err
+	}
+	result.Proof = make([]common.Hash, len(proofs))
+	for i := range proofs {
+		result.Proof[i] = common.Hash(proofs[i])
+	}
+	return result, nil
+}
+
+type L2RelayMsgParams struct {
+	Target       common.Address `json:"target"`
+	Sender       common.Address `json:"sender"`
+	Message      hexutil.Bytes  `json:"message"`
+	MessageIndex uint64         `json:"messageIndex"`
+	MMRSize      uint64         `json:"mmrSize"`
+	Proof        []common.Hash  `json:"proof"`
+}
+
+func (s *RollupAPI) GetL2RelayMsgParams(msgIndex uint64) (*L2RelayMsgParams, error) {
+	result := &L2RelayMsgParams{MessageIndex: msgIndex}
+	msg, err := s.rollup.GetL1SentMessage(msgIndex)
+	if err != nil {
+		return nil, err
+	}
+	result.Target = common.Address(msg.Target)
+	result.Sender = common.Address(msg.Sender)
+	result.Message = msg.Message
+	// index of l1 sent msg is MMR size
+	result.MMRSize = msgIndex + 1
+	proofs, err := s.rollup.GetL1MMRProof(msgIndex, result.MMRSize)
+	if err != nil {
+		return nil, err
+	}
+	result.Proof = make([]common.Hash, len(proofs))
+	for i := range proofs {
+		result.Proof[i] = common.Hash(proofs[i])
+	}
+	return result, nil
+}
+
 // PublicTransactionPoolAPI exposes methods for the RPC interface
 type PublicTransactionPoolAPI struct {
 	b         Backend
