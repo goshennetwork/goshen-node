@@ -18,7 +18,6 @@ package core
 
 import (
 	"errors"
-	"fmt"
 	"math"
 	"math/big"
 	"sort"
@@ -586,87 +585,16 @@ func (pool *TxPool) local() map[common.Address]types.Transactions {
 // validateTx checks whether a transaction is valid according to the consensus
 // rules and adheres to some heuristic limits of the local node (price and size).
 func (pool *TxPool) validateTx(tx *types.Transaction, local bool) error {
-	if pool.chainconfig.Layer2Instant != nil { //l2 tx pool do not accept L1CrossLayer signature message,because of hard coded
-		//in l1, here use the same is fine, maybe set it in chainConfig?
-		if tx.Protected() == false {
-			return ErrTxUnprotected
-		}
-		sender, err := pool.signer.Sender(tx)
-		if err != nil {
-			return fmt.Errorf("validate l2 tx err: %s", err)
-		}
-		if sender == consts.L1CrossLayerWitnessSender {
-			return ErrUnexpectedSystemSender
-		}
-		if tx.Nonce() >= consts.MaxSenderNonce {
-			return ErrNonceMax
-		}
-		return nil
+	cfg := ValidDataTxConfig{
+		MaxGas:   pool.currentMaxGas,
+		GasPrice: pool.gasPrice,
+		BaseFee:  pool.priced.urgent.baseFee,
+		Istanbul: pool.istanbul,
+		Eip1559:  pool.eip1559,
+		Eip2718:  pool.eip2718,
 	}
-	// Accept only legacy transactions until EIP-2718/2930 activates.
-	if !pool.eip2718 && tx.Type() != types.LegacyTxType {
-		return ErrTxTypeNotSupported
-	}
-	// Reject dynamic fee transactions until EIP-1559 activates.
-	if !pool.eip1559 && tx.Type() == types.DynamicFeeTxType {
-		return ErrTxTypeNotSupported
-	}
-	// Reject transactions over defined size to prevent DOS attacks
-	if uint64(tx.Size()) > txMaxSize {
-		return ErrOversizedData
-	}
-	// Transactions can't be negative. This may never happen using RLP decoded
-	// transactions but may occur if you create a transaction using the RPC.
-	if tx.Value().Sign() < 0 {
-		return ErrNegativeValue
-	}
-	// Ensure the transaction doesn't exceed the current block limit gas.
-	if pool.currentMaxGas < tx.Gas() {
-		return ErrGasLimit
-	}
-	// Sanity check for extremely large numbers
-	if tx.GasFeeCap().BitLen() > 256 {
-		return ErrFeeCapVeryHigh
-	}
-	if tx.GasTipCap().BitLen() > 256 {
-		return ErrTipVeryHigh
-	}
-	// Ensure gasFeeCap is greater than or equal to gasTipCap.
-	if tx.GasFeeCapIntCmp(tx.GasTipCap()) < 0 {
-		return ErrTipAboveFeeCap
-	}
-	// Make sure the transaction is signed properly.
-	from, err := types.Sender(pool.signer, tx)
-	if err != nil {
-		return ErrInvalidSender
-	}
-	// Drop non-local transactions under our own minimal accepted gas price or tip.
-	pendingBaseFee := pool.priced.urgent.baseFee
-	if !local && tx.EffectiveGasTipIntCmp(pool.gasPrice, pendingBaseFee) < 0 {
-		return ErrUnderpriced
-	}
-	// Ensure the transaction adheres to nonce ordering
-	if pool.currentState.GetNonce(from) > tx.Nonce() {
-		return ErrNonceTooLow
-	}
-	// Transactor should have enough funds to cover the costs
-	// cost == V + GP * GL
-	if pool.currentState.GetBalance(from).Cmp(tx.Cost()) < 0 {
-		return ErrInsufficientFunds
-	}
-	// Ensure the transaction has more gas than the basic tx fee.
-	intrGas, err := IntrinsicGas(tx.Data(), tx.AccessList(), tx.To() == nil, true, pool.istanbul)
-	if err != nil {
-		return err
-	}
-	if tx.Gas() < intrGas {
-		return ErrIntrinsicGas
-	}
-	if tx.Gas()-intrGas > consts.MaxTxExecGas {
-		return ErrExecGasTooHigh
-	}
+	return ValidateTx(tx, pool.currentState, pool.signer, cfg, pool.chainconfig.Layer2Instant != nil)
 
-	return nil
 }
 
 // add validates a transaction and inserts it into the non-executable queue for later

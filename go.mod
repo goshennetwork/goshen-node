@@ -41,13 +41,15 @@ require (
 	github.com/jedisct1/go-minisign v0.0.0-20190909160543-45766022959e
 	github.com/julienschmidt/httprouter v1.2.0
 	github.com/karalabe/usb v0.0.0-20211005121534-4c5740d64559
+	github.com/klauspost/compress v1.4.1 // indirect
+	github.com/klauspost/cpuid v1.2.0 // indirect
 	github.com/laizy/log v0.1.0
-	github.com/laizy/web3 v0.1.14-0.20220620032630-b9ded53f7c78
+	github.com/laizy/web3 v0.1.14-0.20220620104024-85b01dc47518
 	github.com/mattn/go-colorable v0.1.12
 	github.com/mattn/go-isatty v0.0.14
 	github.com/naoina/toml v0.1.2-0.20170918210437-9fafd6967416
 	github.com/olekukonko/tablewriter v0.0.5
-	github.com/ontology-layer-2/optimistic-rollup v0.0.0-20220624083740-c20e3a54eeb4
+	github.com/ontology-layer-2/rollup-contracts v0.0.0-20220627132340-b75b1d67f070
 	github.com/peterh/liner v1.1.1-0.20190123174540-a2c9a5303de7
 	github.com/prometheus/tsdb v0.7.1
 	github.com/rjeczalik/notify v0.9.1
@@ -56,7 +58,6 @@ require (
 	github.com/status-im/keycard-go v0.0.0-20190316090335-8537d3370df4
 	github.com/stretchr/testify v1.7.0
 	github.com/syndtr/goleveldb v1.0.1-0.20210819022825-2ae1ddf74ef7
-	github.com/tklauser/go-sysconf v0.3.5 // indirect
 	github.com/tyler-smith/go-bip39 v1.1.0
 	golang.org/x/crypto v0.0.0-20210415154028-4f45737414dc
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c

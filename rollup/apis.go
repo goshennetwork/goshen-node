@@ -1,12 +1,13 @@
 package rollup
 
 import (
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/consts"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/rpc"
-	"github.com/ontology-layer-2/optimistic-rollup/binding"
-	"github.com/ontology-layer-2/optimistic-rollup/store/schema"
+	"github.com/ontology-layer-2/rollup-contracts/binding"
+	"github.com/ontology-layer-2/rollup-contracts/store/schema"
 )
 
 type L2Api struct {
@@ -44,14 +45,14 @@ type GlobalInfo struct {
 func (self *L2Api) GlobalInfo() *GlobalInfo {
 	//maybe syncing should also return some info
 	var ret GlobalInfo
-	l2Store := self.store.L2Client()
-	info := self.store.InputChain().GetInfo()
+	l2Store := self.Store.L2Client()
+	info := self.Store.InputChain().GetInfo()
 	ret.L1InputInfo = *info
 	ret.L2CheckedBatchNum = l2Store.GetTotalCheckedBatchNum()
 	ret.L2CheckedBlockNum = l2Store.GetTotalCheckedBlockNum(info.TotalBatches)
 	ret.L2HeadBlockNumber = self.ethBackend.BlockChain().CurrentHeader().Number.Uint64()
-	ret.L1SyncedBlockNumber = self.store.GetLastSyncedL1Height()
-	ret.L1SyncedTimestamp = self.store.GetLastSyncedL1Timestamp()
+	ret.L1SyncedBlockNumber = self.Store.GetLastSyncedL1Height()
+	ret.L1SyncedTimestamp = self.Store.GetLastSyncedL1Timestamp()
 	return &ret
 }
 
@@ -101,6 +102,20 @@ func (self *L2Api) GetPendingTxBatches() []byte {
 	}
 	log.Info("generate batch", "index", batches.BatchIndex, "size", len(batchesData))
 	return batchesData
+}
+
+func (self *L2Api) GetState(batchIndex uint64) common.Hash {
+	if batchIndex >= self.Store.L2Client().GetTotalCheckedBatchNum() {
+		return common.Hash{}
+	}
+	blockNum := self.Store.L2Client().GetTotalCheckedBlockNum(batchIndex)
+	index := blockNum - 1
+	block := self.ethBackend.BlockChain().GetBlockByNumber(index)
+	if block == nil {
+		log.Warn("nil block", "blockNumber", index)
+		return common.Hash{}
+	}
+	return block.Hash()
 }
 
 func FilterOutQueues(txs []*types.Transaction) ([]*types.Transaction, uint64) {

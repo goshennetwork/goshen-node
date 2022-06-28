@@ -203,6 +203,7 @@ var (
 		utils.RollupEnableFlag,
 		utils.RollupSyncConfigFile,
 		utils.RollupContractsConfigFile,
+		utils.RollupVerifier,
 	}
 )
 

@@ -814,11 +814,6 @@ func (w *worker) commitTransaction(tx *types.Transaction, coinbase common.Addres
 	receipt, err := core.ApplyTransaction(w.chainConfig, w.chain, &coinbase, w.current.gasPool, w.current.state, w.current.header, tx, &w.current.header.GasUsed, *w.chain.GetVMConfig())
 	if err != nil {
 		w.current.state.RevertToSnapshot(snap)
-		// but try to save queue tx
-		// TODO: check whether need to revert to snapshot
-		if tx.IsQueue() {
-			w.current.txs = append(w.current.txs, tx)
-		}
 		return nil, err
 	}
 	w.current.txs = append(w.current.txs, tx)
@@ -872,8 +867,12 @@ func (w *worker) commitTransactions(txs *types.TransactionsByPriceAndNonce, coin
 			break
 		}
 		// make sure not generate too large block
-		if !tx.IsQueue() && w.current.TotalNonQueueTxSize()+uint64(tx.Size())+5*1024 > consts.MaxRollupInputBatchSize {
-			break
+		if !tx.IsQueue() {
+			totalNoneQueueSize := w.current.TotalNonQueueTxSize()
+			if totalNoneQueueSize+uint64(tx.Size())+5*1024 > consts.MaxRollupInputBatchSize {
+				log.Warn("tx reach max size", "total left size", totalNoneQueueSize, "tx size", tx.Size(), "max size", consts.MaxRollupInputBatchSize)
+				break
+			}
 		}
 		// Error may be ignored here. The error has already been checked
 		// during transaction acceptance is the transaction pool.
@@ -905,7 +904,7 @@ func (w *worker) commitTransactions(txs *types.TransactionsByPriceAndNonce, coin
 
 		case errors.Is(err, core.ErrNonceTooHigh):
 			// Reorg notification data race between the transaction pool and miner, skip account =
-			log.Trace("Skipping account with hight nonce", "sender", from, "nonce", tx.Nonce())
+			log.Trace("Skipping account with high nonce", "sender", from, "nonce", tx.Nonce())
 			txs.Pop()
 
 		case errors.Is(err, nil):
@@ -952,6 +951,9 @@ func (w *worker) commitTransactions(txs *types.TransactionsByPriceAndNonce, coin
 
 // commitNewWork generates several new sealing tasks based on the parent block.
 func (w *worker) commitNewWork(interrupt *int32, noempty bool, timestamp int64) {
+	if w.layer2Engine() != nil && w.eth.RollupBackend().IsVerifier { //verifier do not commit new work
+		return
+	}
 	log.Debug("miner: commit new work")
 	w.mu.RLock()
 	defer w.mu.RUnlock()
@@ -965,10 +967,13 @@ func (w *worker) commitNewWork(interrupt *int32, noempty bool, timestamp int64) 
 	num := parent.Number()
 
 	gasLimit := core.CalcGasLimit(parent.GasLimit(), w.config.GasCeil)
-	var queueTxs *rollup.QueuesWithContext
+	var queueTxs *rollup.TxsWithContext
+	var pendingQueueIndex = parent.Header().TotalExecutedQueueNum()
 	if w.layer2Engine() != nil {
+		//in l2 mod, gasLimit keep same
+		gasLimit = parent.GasLimit()
 		var err error
-		queueTxs, err = w.eth.RollupBackend().GetPendingQueue(parent.Header().TotalExecutedQueueNum(), gasLimit)
+		queueTxs, err = w.eth.RollupBackend().GetPendingQueue(pendingQueueIndex, gasLimit)
 		if err != nil {
 			log.Error("get pending failed", "err", err)
 			return
@@ -985,8 +990,7 @@ func (w *worker) commitNewWork(interrupt *int32, noempty bool, timestamp int64) 
 	}
 	if w.layer2Engine() != nil {
 		// set header difficulty
-		totalQueueNum := parent.Header().TotalExecutedQueueNum() + uint64(len(queueTxs.Txs))
-		header.SetTotalExecutedQueueNum(totalQueueNum)
+		header.SetTotalExecutedQueueNum(pendingQueueIndex + uint64(len(queueTxs.Txs)))
 	}
 	// Set baseFee and GasLimit if we are on an EIP-1559 chain
 	if w.chainConfig.IsLondon(header.Number) {
@@ -1077,7 +1081,7 @@ func (w *worker) commitNewWork(interrupt *int32, noempty bool, timestamp int64) 
 		return
 	}
 	//should run enqueue tx first to ensure tx will not failed because of reaching block gasLimit
-	if w.layer2Engine() != nil && len(queueTxs.Txs) > 0 {
+	if w.layer2Engine() != nil && len(queueTxs.Txs) != 0 {
 		for _, tx := range queueTxs.Txs { //more strict, check nonce correctness
 			if !tx.IsQueue() {
 				log.Error("queue nonce wired", "nonce", tx.Nonce(), "hash", tx.Hash())
@@ -1140,14 +1144,10 @@ func (w *worker) commit(uncles []*types.Header, interval func(), update bool, st
 		return err
 	}
 	if w.layer2Engine() != nil {
-		totalQueue := w.current.header.TotalExecutedQueueNum()
-		parent := w.chain.GetHeader(w.current.header.ParentHash, w.current.header.Number.Uint64()-1)
-		queueStart := parent.TotalExecutedQueueNum()
-		queueNum := totalQueue - queueStart
-		if queueNum > 0 {
-			if err := w.layer2Engine().ValidateTx(queueStart, queueNum, w.current.txs); err != nil {
-				return fmt.Errorf("validate tx failed %s", err)
-			}
+		parent := w.chain.GetBlock(block.ParentHash(), block.NumberU64()-1)
+		if block.Header().TotalExecutedQueueNum()-parent.Header().TotalExecutedQueueNum() == 0 && len(block.Transactions()) == 0 {
+			//nothing to mine
+			return fmt.Errorf("found useless block, hash: 0x%x, number: 0x%x", block.Hash(), block.Number())
 		}
 	}
 	if w.isRunning() {
