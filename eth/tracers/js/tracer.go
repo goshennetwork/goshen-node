@@ -29,6 +29,7 @@ import (
 	"unsafe"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/consts"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/vm"
@@ -688,6 +689,7 @@ func (jst *jsTracer) CaptureStart(env *vm.EVM, from common.Address, to common.Ad
 	}
 	jst.ctx["from"] = from
 	jst.ctx["to"] = to
+	jst.ctx["nonce"] = env.TxContext.Nonce
 	jst.ctx["input"] = input
 	jst.ctx["gas"] = gas
 	jst.ctx["gasPrice"] = env.TxContext.GasPrice
@@ -703,7 +705,8 @@ func (jst *jsTracer) CaptureStart(env *vm.EVM, from common.Address, to common.Ad
 	// Compute intrinsic gas
 	isHomestead := env.ChainConfig().IsHomestead(env.Context.BlockNumber)
 	isIstanbul := env.ChainConfig().IsIstanbul(env.Context.BlockNumber)
-	intrinsicGas, err := core.IntrinsicGas(input, nil, jst.ctx["type"] == "CREATE", isHomestead, isIstanbul)
+	isQeueue := env.TxContext.Nonce >= consts.InitialEnqueueTxNonce
+	intrinsicGas, err := core.IntrinsicGas(input, nil, jst.ctx["type"] == "CREATE", isHomestead, isIstanbul, isQeueue)
 	if err != nil {
 		return
 	}

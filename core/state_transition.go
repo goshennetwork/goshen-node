@@ -117,7 +117,10 @@ func (result *ExecutionResult) Revert() []byte {
 }
 
 // IntrinsicGas computes the 'intrinsic gas' for a message with the given data.
-func IntrinsicGas(data []byte, accessList types.AccessList, isContractCreation bool, isHomestead, isEIP2028 bool) (uint64, error) {
+func IntrinsicGas(data []byte, accessList types.AccessList, isContractCreation, isHomestead, isEIP2028, isEnqueue bool) (uint64, error) {
+	if isEnqueue {
+		return 0, nil
+	}
 	// Set the starting gas for the raw transaction
 	var gas uint64
 	if isContractCreation && isHomestead {
@@ -220,7 +223,7 @@ func (st *StateTransition) preCheck() error {
 	// Only check transactions that are not fake
 	if !st.msg.IsFake() {
 		//maybe use param in chainConfig
-		if st.evm.ChainConfig().Layer2Instant != nil && st.msg.Nonce() >= consts.InitialEnqueueNonceNonce {
+		if st.evm.ChainConfig().Layer2Instant != nil && st.msg.Nonce() >= consts.InitialEnqueueTxNonce {
 			// l1 queue tx already checked in l1 contracats
 			log.Info("state transition skipping nonce check with l1 queue tx")
 		} else {
@@ -306,7 +309,8 @@ func (st *StateTransition) TransitionDb() (*ExecutionResult, error) {
 	contractCreation := msg.To() == nil
 
 	// Check clauses 4-5, subtract intrinsic gas if everything is correct
-	gas, err := IntrinsicGas(st.data, st.msg.AccessList(), contractCreation, homestead, istanbul)
+	isQeueue := msg.Nonce() >= consts.InitialEnqueueTxNonce
+	gas, err := IntrinsicGas(st.data, st.msg.AccessList(), contractCreation, homestead, istanbul, isQeueue)
 	if err != nil {
 		return nil, err
 	}

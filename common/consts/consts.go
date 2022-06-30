@@ -2,7 +2,7 @@ package consts
 
 import "github.com/ethereum/go-ethereum/common"
 
-const InitialEnqueueNonceNonce = 1 << 63
+const InitialEnqueueTxNonce = 1 << 63
 const MaxSenderNonce = 1 << 62
 const MaxL1TxSize = 128 * 1024 // defined in tx_pool.go of go-ethereum
 const MaxL2TxSize = 32 * 1024  // limit L2 tx to 32KB to ensure it can be submitted to L1

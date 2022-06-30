@@ -400,7 +400,7 @@ func (tx *Transaction) WithSignature(signer Signer, sig []byte) (*Transaction, e
 }
 
 func (tx *Transaction) IsQueue() bool {
-	return tx.Nonce() >= consts.InitialEnqueueNonceNonce
+	return tx.Nonce() >= consts.InitialEnqueueTxNonce
 }
 
 // Transactions implements DerivableList for transactions.
