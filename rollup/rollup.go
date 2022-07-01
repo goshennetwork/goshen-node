@@ -3,6 +3,7 @@ package rollup
 import (
 	"errors"
 	"fmt"
+	"sort"
 
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -123,37 +124,12 @@ func (self *RollupBackend) GetL1MMRProof(msgIndex, size uint64) ([]web3.Hash, er
 }
 
 func (self *RollupBackend) GetL2BlockNumToBatchNum(blockNum uint64) uint64 {
-	upper := self.Store.L2Client().GetTotalCheckedBatchNum()
-	lower := uint64(0)
-	i := (upper + lower) / 2
-	_block := uint64(0)
-	// find the closest batch
-	for {
-		_block = self.Store.L2Client().GetTotalCheckedBlockNum(i)
-		if _block > blockNum {
-			upper = i
-		} else if _block < blockNum {
-			lower = i
-		} else {
-			break
-		}
-		if lower >= upper-1 {
-			break
-		}
-		i = (upper + lower) / 2
-	}
-	// closest higher
-	if _block >= blockNum {
-		return i
-	}
-
-	for {
-		i++
-		_block = self.Store.L2Client().GetTotalCheckedBlockNum(i)
-		if _block > blockNum {
-			return i
-		}
-	}
+	// upper is max batch index
+	upper := self.Store.L2Client().GetTotalCheckedBatchNum() - 1
+	index := sort.Search(int(upper), func(i int) bool {
+		return self.Store.L2Client().GetTotalCheckedBlockNum(uint64(i)) >= blockNum
+	})
+	return uint64(index)
 }
 
 func (self *RollupBackend) GetL2SentMessage(msgIndex uint64) (*schema.CrossLayerSentMessage, error) {

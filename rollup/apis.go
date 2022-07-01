@@ -49,7 +49,7 @@ func (self *L2Api) GlobalInfo() *GlobalInfo {
 	info := self.Store.InputChain().GetInfo()
 	ret.L1InputInfo = *info
 	ret.L2CheckedBatchNum = l2Store.GetTotalCheckedBatchNum()
-	ret.L2CheckedBlockNum = l2Store.GetTotalCheckedBlockNum(info.TotalBatches)
+	ret.L2CheckedBlockNum = l2Store.GetTotalCheckedBlockNum(ret.L2CheckedBatchNum - 1)
 	ret.L2HeadBlockNumber = self.ethBackend.BlockChain().CurrentHeader().Number.Uint64()
 	ret.L1SyncedBlockNumber = self.Store.GetLastSyncedL1Height()
 	ret.L1SyncedTimestamp = self.Store.GetLastSyncedL1Timestamp()

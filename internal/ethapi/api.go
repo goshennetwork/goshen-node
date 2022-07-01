@@ -1591,7 +1591,8 @@ func (s *RollupAPI) GetL1RelayMsgParams(msgIndex uint64) (*L1RelayMsgParams, err
 	result.Target = common.Address(msg.Target)
 	result.Sender = common.Address(msg.Sender)
 	result.Message = msg.Message
-	batchNum := s.rollup.GetL2BlockNumToBatchNum(msg.BlockNumber)
+	blockNum := msg.BlockNumber + 1
+	batchNum := s.rollup.GetL2BlockNumToBatchNum(blockNum)
 	stateInfo, err := s.GetBatchState(batchNum)
 	if err != nil {
 		return nil, err

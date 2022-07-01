@@ -85,7 +85,8 @@ func (self *WitnessService) Work() error {
 		log.Debug("have checked all l2 batches", "checkedBatchNum", checkedBatchNum, "l2 total", l2Batches)
 		return nil
 	}
-	checkedBlockNum := self.Store.L2Client().GetTotalCheckedBlockNum(checkedBatchNum)
+	lastIndex := checkedBatchNum - 1
+	checkedBlockNum := self.Store.L2Client().GetTotalCheckedBlockNum(lastIndex)
 	//now only check one batch
 	input, err := inputChainStore.GetAppendedTransaction(checkedBatchNum)
 	utils.Ensure(err)
@@ -124,7 +125,8 @@ func (self *WitnessService) Work() error {
 	//now store witnessed state
 	writer := self.Store.Writer()
 	writer.L2Client().StoreTotalCheckedBatchNum(checkedBatchNum)
-	writer.L2Client().StoreCheckedBlockNum(checkedBatchNum, checkedBlockNum)
+	//save batch index => block num
+	writer.L2Client().StoreCheckedBlockNum(checkedBatchNum-1, checkedBlockNum)
 	writer.Commit()
 	return nil
 }
