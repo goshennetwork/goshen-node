@@ -16,18 +16,16 @@ import (
 	"github.com/laizy/log"
 	"github.com/laizy/web3/utils"
 	"github.com/ontology-layer-2/rollup-contracts/binding"
-	"github.com/ontology-layer-2/rollup-contracts/config"
 	"github.com/ontology-layer-2/rollup-contracts/store/schema"
 )
 
 type WitnessService struct {
 	*RollupBackend
-	cfg  config.SyncConfig
 	quit chan struct{}
 }
 
-func NewWitnessService(backend *RollupBackend, cfg *config.SyncConfig) *WitnessService {
-	return &WitnessService{backend, *cfg, make(chan struct{})}
+func NewWitnessService(backend *RollupBackend) *WitnessService {
+	return &WitnessService{backend, make(chan struct{})}
 }
 
 func (self *WitnessService) Start() error {

@@ -192,8 +192,13 @@ type Config struct {
 	// AllowUnprotectedTxs allows non EIP-155 protected transactions to be send over RPC.
 	AllowUnprotectedTxs bool `toml:",omitempty"`
 
-	RollupConfig   *config.RollupConfig
-	RollupVerifier bool
+	RollupConfig *RollupConfig
+}
+
+type RollupConfig struct {
+	DbDir     string
+	CliConfig config.RollupCliConfig
+	Verifier  bool
 }
 
 // IPCEndpoint resolves an IPC endpoint based on a configured value, taking into

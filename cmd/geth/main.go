@@ -201,9 +201,8 @@ var (
 
 	rollupFlags = []cli.Flag{
 		utils.RollupEnableFlag,
-		utils.RollupSyncConfigFile,
-		utils.RollupContractsConfigFile,
-		utils.RollupVerifier,
+		utils.RollupCliConfigFile,
+		utils.RollupVerifierFlag,
 	}
 )
 

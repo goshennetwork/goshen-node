@@ -37,6 +37,7 @@ import (
 	"github.com/laizy/web3/utils"
 	"github.com/ontology-layer-2/rollup-contracts/store/leveldbstore"
 	"github.com/ontology-layer-2/rollup-contracts/store/schema"
+	sync_service "github.com/ontology-layer-2/rollup-contracts/sync-service"
 	"github.com/prometheus/tsdb/fileutil"
 )
 
@@ -167,15 +168,15 @@ func New(conf *Config) (*Node, error) {
 	if rollupConf != nil {
 		node.RollupInfo = &RollupInfo{}
 		//if not empty, try to set up rollup store
-		node.RollupInfo.L1Client, err = jsonrpc.NewClient(rollupConf.SyncConfig.L1RpcUrl)
+		node.RollupInfo.L1Client, err = jsonrpc.NewClient(rollupConf.CliConfig.L1Rpc)
 		if err != nil {
 			return nil, fmt.Errorf("connect l1 client failed, err: ", err)
 		}
-		rollupDb, err := leveldbstore.NewLevelDBStore(rollupConf.SyncConfig.DbDir)
+		rollupDb, err := leveldbstore.NewLevelDBStore(rollupConf.DbDir)
 		utils.Ensure(err)
 		node.RollupInfo.RollupDb = rollupDb
-		node.RollupInfo.DBPath = rollupConf.SyncConfig.DbDir
-		node.RollupInfo.IsVerifier = conf.RollupVerifier
+		node.RollupInfo.DBPath = rollupConf.DbDir
+		node.RollupInfo.IsVerifier = conf.RollupConfig.Verifier
 		//add rpc module
 		log.Info("open l2 http&ws module")
 		conf.HTTPModules = append(conf.HTTPModules, "l2")
@@ -203,6 +204,14 @@ func (n *Node) Start() error {
 	n.state = runningState
 	// open networking and RPC endpoints
 	err := n.openEndpoints()
+	// add sync service
+	if n.RollupInfo != nil {
+		log.Info("register sync service")
+		l2client, err := jsonrpc.NewClient(n.config.RollupConfig.CliConfig.L2Rpc)
+		utils.Ensure(err)
+		syncService := sync_service.NewSyncService(n.RollupInfo.RollupDb, n.RollupInfo.L1Client, l2client, &n.config.RollupConfig.CliConfig, n.RollupInfo.DBPath)
+		n.lifecycles = append(n.lifecycles, syncService)
+	}
 	lifecycles := make([]Lifecycle, len(n.lifecycles))
 	copy(lifecycles, n.lifecycles)
 	n.lock.Unlock()

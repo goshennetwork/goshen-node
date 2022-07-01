@@ -70,7 +70,6 @@ import (
 	pcsclite "github.com/gballet/go-libpcsclite"
 	"github.com/laizy/web3/utils"
 	"github.com/ontology-layer-2/rollup-contracts/config"
-	sync_service "github.com/ontology-layer-2/rollup-contracts/sync-service"
 	gopsutil "github.com/shirou/gopsutil/mem"
 	"gopkg.in/urfave/cli.v1"
 )
@@ -800,19 +799,13 @@ var (
 		Usage: "enable l2 client",
 	}
 
-	RollupSyncConfigFile = cli.StringFlag{
-		Name:  "sync-config",
-		Usage: "specify sync-service config filename",
-		Value: config.DefaultSyncConfigName,
+	RollupCliConfigFile = cli.StringFlag{
+		Name:  "rollupConfig",
+		Usage: "specify sync-service config filename, default set to rollup-config.json",
+		Value: "rollup-config.json",
 	}
 
-	RollupContractsConfigFile = cli.StringFlag{
-		Name:  "contracts-config",
-		Usage: "specify l1 contracts config filename",
-		Value: config.DefaultContractName,
-	}
-
-	RollupVerifier = cli.BoolFlag{
+	RollupVerifierFlag = cli.BoolFlag{
 		Name:  "verifier",
 		Usage: "enable verifier mod and it will disable mine behave",
 	}
@@ -823,12 +816,10 @@ func setRollupConfig(ctx *cli.Context, cfg *node.Config) {
 	if ctx.GlobalBool(RollupEnableFlag.Name) {
 		//debug
 		log.Info("set rollup config to node.")
-		var syncConfig config.SyncConfig
-		utils.Ensure(utils.LoadJsonFile(ctx.GlobalString(RollupSyncConfigFile.Name), &syncConfig))
-		var contractsConfig config.Contracts
-		utils.Ensure(utils.LoadJsonFile(ctx.GlobalString(RollupContractsConfigFile.Name), &contractsConfig))
-		cfg.RollupConfig = &config.RollupConfig{SyncConfig: syncConfig, Contracts: contractsConfig}
-		cfg.RollupVerifier = ctx.GlobalBool(RollupVerifier.Name)
+		var rollupCliConfig config.RollupCliConfig
+		utils.Ensure(utils.LoadJsonFile(ctx.GlobalString(RollupCliConfigFile.Name), &rollupCliConfig))
+		isVerifier, dbDir := ctx.GlobalBool(RollupVerifierFlag.Name), "rollupdb"
+		cfg.RollupConfig = &node.RollupConfig{CliConfig: rollupCliConfig, DbDir: filepath.Join(cfg.DataDir, dbDir), Verifier: isVerifier}
 	}
 }
 
@@ -1771,15 +1762,8 @@ func RegisterEthService(stack *node.Node, cfg *ethconfig.Config) (ethapi.Backend
 	return backend.APIBackend, backend
 }
 
-func RegisterSyncService(stack *node.Node, cfg *config.SyncConfig) {
-	syncService := sync_service.NewSyncService(stack.RollupInfo.RollupDb, stack.RollupInfo.L1Client, cfg)
-	//todo api registered here
-	//stack.RegisterAPIs()
-	stack.RegisterLifecycle(syncService)
-}
-
-func RegisterWitnessService(stack *node.Node, rollupBackend *rollup.RollupBackend, cfg *config.SyncConfig) {
-	witnessService := rollup.NewWitnessService(rollupBackend, cfg)
+func RegisterWitnessService(stack *node.Node, rollupBackend *rollup.RollupBackend) {
+	witnessService := rollup.NewWitnessService(rollupBackend)
 	stack.RegisterLifecycle(witnessService)
 	//register upload api
 	stack.RegisterAPIs(rollup.Apis(rollupBackend))
