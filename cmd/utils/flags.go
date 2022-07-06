@@ -1766,7 +1766,7 @@ func RegisterWitnessService(stack *node.Node, rollupBackend *rollup.RollupBacken
 	witnessService := rollup.NewWitnessService(rollupBackend)
 	stack.RegisterLifecycle(witnessService)
 	//register upload api
-	stack.RegisterAPIs(rollup.Apis(rollupBackend))
+	stack.RegisterAPIs(ethapi.Apis(rollupBackend))
 }
 
 // RegisterEthStatsService configures the Ethereum Stats daemon and adds it to

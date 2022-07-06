@@ -7,6 +7,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/ethdb"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/laizy/web3"
 	"github.com/laizy/web3/jsonrpc"
@@ -22,10 +23,11 @@ type TxsWithContext struct {
 
 type EthBackend interface {
 	BlockChain() *core.BlockChain
+	ChainDb() ethdb.Database
 }
 
 type RollupBackend struct {
-	ethBackend EthBackend
+	EthBackend EthBackend
 	Store      *store.Storage
 	//l1 client
 	L1Client   *jsonrpc.Client
@@ -92,6 +94,10 @@ func (self *RollupBackend) LatestInputBatchInfo() (*schema.InputChainInfo, error
 
 func (self *RollupBackend) LatestStateBatchInfo() (*schema.StateChainInfo, error) {
 	return self.Store.StateChain().GetInfo(), nil
+}
+
+func (self *RollupBackend) GetEnqueuedTxs(queueStart, queueNum uint64) ([]*schema.EnqueuedTransaction, error) {
+	return self.Store.InputChain().GetEnqueuedTransactions(queueStart, queueNum)
 }
 
 func (self *RollupBackend) InputBatchByNumber(index uint64) (*schema.AppendedTransaction, error) {

@@ -34,7 +34,6 @@ import (
 	"github.com/ethereum/go-ethereum/ethdb"
 	"github.com/ethereum/go-ethereum/event"
 	"github.com/ethereum/go-ethereum/params"
-	"github.com/ethereum/go-ethereum/rollup"
 	"github.com/ethereum/go-ethereum/rpc"
 )
 
@@ -139,17 +138,6 @@ func GetAPIs(apiBackend Backend) []rpc.API {
 			Version:   "1.0",
 			Service:   NewPrivateAccountAPI(apiBackend, nonceLock),
 			Public:    false,
-		},
-	}
-}
-
-func GetRollupAPIs(apiBackend Backend, rollupBackend *rollup.RollupBackend) []rpc.API {
-	return []rpc.API{
-		{
-			Namespace: "rollup",
-			Version:   "1.0",
-			Service:   NewRollUpAPI(apiBackend, rollupBackend),
-			Public:    true,
 		},
 	}
 }

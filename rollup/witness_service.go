@@ -66,7 +66,7 @@ func (self *WitnessService) Save(blocks []*BlockWithReceipts) {
 			logs = append(logs, receipt.Logs...)
 		}
 		// Commit block and state to database.
-		_, err := self.ethBackend.BlockChain().WriteBlockWithState(block, blockWithReceipts.r, logs, blockWithReceipts.s, true)
+		_, err := self.EthBackend.BlockChain().WriteBlockWithState(block, blockWithReceipts.r, logs, blockWithReceipts.s, true)
 		if err != nil { // wired
 			panic(err)
 		}
@@ -95,14 +95,14 @@ func (self *WitnessService) Work() error {
 		panic(1)
 	}
 
-	parentBlock := self.ethBackend.BlockChain().GetBlockByNumber(checkedBlockNum - 1)
+	parentBlock := self.EthBackend.BlockChain().GetBlockByNumber(checkedBlockNum - 1)
 	blocks, inputHash := ProcessBatch(data, parentBlock.Hash(), self.RollupBackend)
 	utils.EnsureTrue(inputHash == input.InputHash)
 	if self.IsVerifier { //verifier store blocks
 		self.Save(blocks)
 	} else {
 		for i, blockWithReceipt := range blocks {
-			local := self.ethBackend.BlockChain().GetBlockByNumber(checkedBlockNum + uint64(i))
+			local := self.EthBackend.BlockChain().GetBlockByNumber(checkedBlockNum + uint64(i))
 			block := blockWithReceipt.b
 			if !bytes.Equal(local.Hash().Bytes(), block.Hash().Bytes()) {
 				log.Error("wrong block found", "got number", block.Number(), "local number", local.Number(), "got hash", block.Hash(), "local hash", local.Hash())
@@ -130,7 +130,7 @@ func (self *WitnessService) Work() error {
 }
 
 func ProcessBatch(input []byte, parentBlockHash common.Hash, rollupBackend *RollupBackend) ([]*BlockWithReceipts, [32]byte) {
-	eth := rollupBackend.ethBackend
+	eth := rollupBackend.EthBackend
 	parent := eth.BlockChain().GetBlockByHash(parentBlockHash)
 	inputChainStore := rollupBackend.Store.InputChain()
 	batch := &binding.RollupInputBatches{}

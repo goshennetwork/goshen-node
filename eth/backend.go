@@ -354,7 +354,6 @@ func (s *Ethereum) APIs() []rpc.API {
 	}...)
 	if _, ok := s.engine.(*layer2.Layer2Instant); ok {
 		log.Warn("l2 do not open net rpc service api")
-		apis = append(apis, ethapi.GetRollupAPIs(s.APIBackend, s.rollupBackend)...)
 	} else {
 		apis = append(apis, rpc.API{
 			Namespace: "net",
