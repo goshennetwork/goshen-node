@@ -13,7 +13,6 @@ import (
 	"github.com/ethereum/go-ethereum/rollup"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/ontology-layer-2/rollup-contracts/binding"
-	"github.com/ontology-layer-2/rollup-contracts/store/schema"
 )
 
 type L2Api struct {
@@ -35,17 +34,23 @@ func newL2Api(rollupBackend *rollup.RollupBackend) *L2Api {
 	return &L2Api{rollupBackend}
 }
 
+type InputChainInfo struct {
+	PendingQueueIndex hexutil.Uint64
+	TotalBatches      hexutil.Uint64
+	QueueSize         hexutil.Uint64
+}
+
 type GlobalInfo struct {
 	//total batch num in l1 RollupInputChain contract
-	L1InputInfo schema.InputChainInfo
+	L1InputInfo *InputChainInfo
 	//l2 client have checked tx batch num
-	L2CheckedBatchNum uint64
+	L2CheckedBatchNum hexutil.Uint64
 	//the total block num l2 already checked,start from 1, because genesis block do not need to check
-	L2CheckedBlockNum uint64
+	L2CheckedBlockNum hexutil.Uint64
 	//l2 client head block num
-	L2HeadBlockNumber   uint64
-	L1SyncedBlockNumber uint64
-	L1SyncedTimestamp   *uint64
+	L2HeadBlockNumber   hexutil.Uint64
+	L1SyncedBlockNumber hexutil.Uint64
+	L1SyncedTimestamp   *hexutil.Uint64
 }
 
 func (self *L2Api) GlobalInfo() *GlobalInfo {
@@ -53,12 +58,21 @@ func (self *L2Api) GlobalInfo() *GlobalInfo {
 	var ret GlobalInfo
 	l2Store := self.Store.L2Client()
 	info := self.Store.InputChain().GetInfo()
-	ret.L1InputInfo = *info
-	ret.L2CheckedBatchNum = l2Store.GetTotalCheckedBatchNum()
-	ret.L2CheckedBlockNum = l2Store.GetTotalCheckedBlockNum(ret.L2CheckedBatchNum - 1)
-	ret.L2HeadBlockNumber = self.EthBackend.BlockChain().CurrentHeader().Number.Uint64()
-	ret.L1SyncedBlockNumber = self.Store.GetLastSyncedL1Height()
-	ret.L1SyncedTimestamp = self.Store.GetLastSyncedL1Timestamp()
+	ret.L1InputInfo = &InputChainInfo{
+		PendingQueueIndex: hexutil.Uint64(info.PendingQueueIndex),
+		TotalBatches:      hexutil.Uint64(info.TotalBatches),
+		QueueSize:         hexutil.Uint64(info.QueueSize),
+	}
+	checkedBatchNum := l2Store.GetTotalCheckedBatchNum()
+	ret.L2CheckedBatchNum = hexutil.Uint64(checkedBatchNum)
+	ret.L2CheckedBlockNum = hexutil.Uint64(l2Store.GetTotalCheckedBlockNum(checkedBatchNum - 1))
+	ret.L2HeadBlockNumber = hexutil.Uint64(self.EthBackend.BlockChain().CurrentHeader().Number.Uint64())
+	ret.L1SyncedBlockNumber = hexutil.Uint64(self.Store.GetLastSyncedL1Height())
+	timeStamp := self.Store.GetLastSyncedL1Timestamp()
+	if timeStamp != nil {
+		_timeStamp := hexutil.Uint64(*timeStamp)
+		ret.L1SyncedTimestamp = &_timeStamp
+	}
 	return &ret
 }
 
@@ -75,7 +89,7 @@ func (self *L2Api) GetPendingTxBatches() []byte {
 		log.Warn("nothing to append")
 		return nil
 	}
-	l2CheckedBlockNum, l2HeadBlockNumber := info.L2CheckedBlockNum, info.L2HeadBlockNumber
+	l2CheckedBlockNum, l2HeadBlockNumber := uint64(info.L2CheckedBlockNum), uint64(info.L2HeadBlockNumber)
 	if l2CheckedBlockNum > l2HeadBlockNumber {
 		//local have nothing to upload
 		log.Warn("nothing need to upload ", "total checked block", l2CheckedBlockNum, "local block number", l2HeadBlockNumber)
@@ -86,7 +100,10 @@ func (self *L2Api) GetPendingTxBatches() []byte {
 	if maxBlockes > 512 {
 		maxBlockes = 512
 	}
-	batches := &binding.RollupInputBatches{QueueStart: info.L1InputInfo.PendingQueueIndex, BatchIndex: info.L2CheckedBatchNum}
+	batches := &binding.RollupInputBatches{
+		QueueStart: uint64(info.L1InputInfo.PendingQueueIndex),
+		BatchIndex: uint64(info.L2CheckedBatchNum),
+	}
 	var batchesData []byte
 	for i := uint64(0); i < maxBlockes; i++ {
 		blockNumber := i + l2CheckedBlockNum
@@ -168,6 +185,11 @@ func (self *L2Api) GetEnqueuedTxs(queueStart, queueNum uint64) ([]*RPCEnqueuedTx
 	return results, nil
 }
 
+type RPCSubBatch struct {
+	Timestamp hexutil.Uint64 `json:"timestamp"`
+	Txs       []interface{}  `json:"transactions"` // RPCTransaction or txHash
+}
+
 // GetBatch return the detail of batch input
 func (self *L2Api) GetBatch(batchNumber uint64, useDetail bool) (map[string]interface{}, error) {
 	batch, err := self.RollupBackend.InputBatchByNumber(batchNumber)
@@ -194,14 +216,17 @@ func (self *L2Api) GetBatch(batchNumber uint64, useDetail bool) (map[string]inte
 			return newRPCTransaction(tx, blockHash, blockNumber, index, nil, self.EthBackend.BlockChain().Config())
 		}
 	}
-	transactions := make([]interface{}, 0)
-	for _, subBatchs := range batchData.SubBatches {
-		for _, tx := range subBatchs.Txs {
+	subBatches := make([]*RPCSubBatch, 0)
+	for _, sub := range batchData.SubBatches {
+		transactions := make([]interface{}, 0)
+		for _, tx := range sub.Txs {
 			formatedTx := formatTx(tx)
 			transactions = append(transactions, formatedTx)
 		}
+		subBatch := &RPCSubBatch{Timestamp: hexutil.Uint64(sub.Timestamp), Txs: transactions}
+		subBatches = append(subBatches, subBatch)
 	}
-	result["transactions"] = transactions
+	result["subBatches"] = subBatches
 	return result, nil
 }
 
