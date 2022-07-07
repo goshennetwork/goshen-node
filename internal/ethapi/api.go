@@ -2025,8 +2025,12 @@ func (api *PrivateDebugAPI) ChaindbCompact() error {
 	return nil
 }
 
-func (s *PrivateDebugAPI) GetReadStorageProofAtBlock(ctx context.Context, blockNrOrHash rpc.BlockNumberOrHash) ([][]byte, error) {
-	return s.b.ReadStorageProofAtBlock(ctx, blockNrOrHash)
+func (s *PrivateDebugAPI) GetReadStorageProofAtBlock(ctx context.Context, blockNrOrHash rpc.BlockNumberOrHash) ([]string, error) {
+	proofs, err := s.b.ReadStorageProofAtBlock(ctx, blockNrOrHash)
+	if err != nil {
+		return nil, err
+	}
+	return toHexSlice(proofs), nil
 }
 
 // SetHead rewinds the head of the blockchain to a previous block.

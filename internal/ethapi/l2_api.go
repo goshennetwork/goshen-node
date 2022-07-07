@@ -242,14 +242,14 @@ type L1RelayMsgParams struct {
 	Target       common.Address `json:"target"`
 	Sender       common.Address `json:"sender"`
 	Message      hexutil.Bytes  `json:"message"`
-	MessageIndex uint64         `json:"messageIndex"`
+	MessageIndex hexutil.Uint64 `json:"messageIndex"`
 	RLPHeader    hexutil.Bytes  `json:"rlpHeader"`
 	StateInfo    *RPCBatchState `json:"stateInfo"`
 	Proof        []common.Hash  `json:"proof"`
 }
 
 func (self *L2Api) GetL1RelayMsgParams(msgIndex uint64) (*L1RelayMsgParams, error) {
-	result := &L1RelayMsgParams{MessageIndex: msgIndex}
+	result := &L1RelayMsgParams{MessageIndex: hexutil.Uint64(msgIndex)}
 	msg, err := self.RollupBackend.GetL2SentMessage(msgIndex)
 	if err != nil {
 		return nil, err
@@ -286,13 +286,13 @@ type L2RelayMsgParams struct {
 	Target       common.Address `json:"target"`
 	Sender       common.Address `json:"sender"`
 	Message      hexutil.Bytes  `json:"message"`
-	MessageIndex uint64         `json:"messageIndex"`
-	MMRSize      uint64         `json:"mmrSize"`
+	MessageIndex hexutil.Uint64 `json:"messageIndex"`
+	MMRSize      hexutil.Uint64 `json:"mmrSize"`
 	Proof        []common.Hash  `json:"proof"`
 }
 
 func (self *L2Api) GetL2RelayMsgParams(msgIndex uint64) (*L2RelayMsgParams, error) {
-	result := &L2RelayMsgParams{MessageIndex: msgIndex}
+	result := &L2RelayMsgParams{MessageIndex: hexutil.Uint64(msgIndex)}
 	msg, err := self.RollupBackend.GetL1SentMessage(msgIndex)
 	if err != nil {
 		return nil, err
@@ -301,8 +301,8 @@ func (self *L2Api) GetL2RelayMsgParams(msgIndex uint64) (*L2RelayMsgParams, erro
 	result.Sender = common.Address(msg.Sender)
 	result.Message = msg.Message
 	// index of l1 sent msg is MMR size
-	result.MMRSize = msgIndex + 1
-	proofs, err := self.RollupBackend.GetL1MMRProof(msgIndex, result.MMRSize)
+	result.MMRSize = hexutil.Uint64(msgIndex + 1)
+	proofs, err := self.RollupBackend.GetL1MMRProof(msgIndex, uint64(result.MMRSize))
 	if err != nil {
 		return nil, err
 	}
