@@ -130,9 +130,8 @@ func (self *RollupBackend) GetL1MMRProof(msgIndex, size uint64) ([]web3.Hash, er
 }
 
 func (self *RollupBackend) GetL2BlockNumToBatchNum(blockNum uint64) uint64 {
-	// upper is max batch index
-	upper := self.Store.L2Client().GetTotalCheckedBatchNum() - 1
-	index := sort.Search(int(upper), func(i int) bool {
+	totalBlock := self.Store.L2Client().GetTotalCheckedBatchNum()
+	index := sort.Search(int(totalBlock), func(i int) bool {
 		return self.Store.L2Client().GetTotalCheckedBlockNum(uint64(i)) >= blockNum
 	})
 	return uint64(index)
