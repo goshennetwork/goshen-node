@@ -216,7 +216,7 @@ func CreateConsensusEngine(stack *node.Node, chainConfig *params.ChainConfig, co
 	}
 	if chainConfig.Layer2Instant != nil {
 		signer := types.LatestSigner(chainConfig)
-		return layer2.New(chainConfig.Layer2Instant, stack.RollupInfo.RollupDb, stack.RollupInfo.DBPath, signer)
+		return layer2.New(chainConfig.Layer2Instant, stack.RollupInfo.RollupDb, stack.RollupInfo.DBPath, signer, stack.RollupInfo.IsVerifier)
 	}
 	// Otherwise assume proof-of-work
 	switch config.PowMode {

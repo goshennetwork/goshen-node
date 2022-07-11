@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/consensus/layer2"
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/metrics"
@@ -172,20 +173,31 @@ type Decoder interface {
 }
 
 var eth66 = map[uint64]msgHandler{
-	NewBlockHashesMsg:             handleNewBlockhashes,
-	NewBlockMsg:                   handleNewBlock,
+	NewBlockHashesMsg:             hook(handleNewBlockhashes),
+	NewBlockMsg:                   hook(handleNewBlock),
 	TransactionsMsg:               handleTransactions,
 	NewPooledTransactionHashesMsg: handleNewPooledTransactionHashes,
 	GetBlockHeadersMsg:            handleGetBlockHeaders66,
-	BlockHeadersMsg:               handleBlockHeaders66,
+	BlockHeadersMsg:               hook(handleBlockHeaders66),
 	GetBlockBodiesMsg:             handleGetBlockBodies66,
-	BlockBodiesMsg:                handleBlockBodies66,
+	BlockBodiesMsg:                hook(handleBlockBodies66),
 	GetNodeDataMsg:                handleGetNodeData66,
-	NodeDataMsg:                   handleNodeData66,
+	NodeDataMsg:                   hook(handleNodeData66),
 	GetReceiptsMsg:                handleGetReceipts66,
-	ReceiptsMsg:                   handleReceipts66,
+	ReceiptsMsg:                   hook(handleReceipts66),
 	GetPooledTransactionsMsg:      handleGetPooledTransactions66,
 	PooledTransactionsMsg:         handlePooledTransactions66,
+}
+
+func hook(fn func(backend Backend, msg Decoder, peer *Peer) error) func(backend Backend, msg Decoder, peer *Peer) error {
+	return func(backend Backend, msg Decoder, peer *Peer) error {
+		if l2, ok := backend.Chain().Engine().(*layer2.Layer2Instant); ok {
+			if !peer.Info().Network.Trusted || !l2.IsVerifier { // verifier do not accept untrusted wired info,sequencer do not accept wired info
+				return nil
+			}
+		}
+		return fn(backend, msg, peer)
+	}
 }
 
 // handleMessage is invoked whenever an inbound message is received from a remote

@@ -32,6 +32,7 @@ import (
 	"github.com/ethereum/go-ethereum/common/mclock"
 	"github.com/ethereum/go-ethereum/common/prque"
 	"github.com/ethereum/go-ethereum/consensus"
+	"github.com/ethereum/go-ethereum/consensus/layer2"
 	"github.com/ethereum/go-ethereum/core/rawdb"
 	"github.com/ethereum/go-ethereum/core/state"
 	"github.com/ethereum/go-ethereum/core/state/snapshot"
@@ -1182,19 +1183,30 @@ func (bc *BlockChain) writeKnownBlock(block *types.Block) error {
 }
 
 // WriteBlockWithState writes the block and all associated state to the database.
-func (bc *BlockChain) WriteBlockWithState(block *types.Block, receipts []*types.Receipt, logs []*types.Log, state *state.StateDB, emitHeadEvent bool) (status WriteStatus, err error) {
+func (bc *BlockChain) WriteBlockWithState(block *types.Block, receipts []*types.Receipt, logs []*types.Log, state *state.StateDB, emitHeadEvent bool, l2rog bool) (status WriteStatus, err error) {
 	if !bc.chainmu.TryLock() {
 		return NonStatTy, errInsertionInterrupted
 	}
 	defer bc.chainmu.Unlock()
-	return bc.writeBlockWithState(block, receipts, logs, state, emitHeadEvent)
+	return bc.writeBlockWithState(block, receipts, logs, state, emitHeadEvent, l2rog)
 }
 
 // writeBlockWithState writes the block and all associated state to the database,
 // but is expects the chain mutex to be held.
-func (bc *BlockChain) writeBlockWithState(block *types.Block, receipts []*types.Receipt, logs []*types.Log, state *state.StateDB, emitHeadEvent bool) (status WriteStatus, err error) {
+func (bc *BlockChain) writeBlockWithState(block *types.Block, receipts []*types.Receipt, logs []*types.Log, state *state.StateDB, emitHeadEvent bool, l2rog bool) (status WriteStatus, err error) {
 	if bc.insertStopped() {
 		return NonStatTy, errInsertionInterrupted
+	}
+	if _, ok := bc.engine.(*layer2.Layer2Instant); ok {
+		if !l2rog { // no l2 rog will ensure the pending block would not fork the chain
+			if block.NumberU64() <= bc.CurrentHeader().Number.Uint64() {
+				return NonStatTy, fmt.Errorf("malicious block, hash %s, number: %s", block.Hash(), block.Number())
+			}
+			head := bc.CurrentHeader()
+			if block.NumberU64()-1 != head.Number.Uint64() || block.ParentHash() != head.Hash() {
+				return NonStatTy, fmt.Errorf("wrong ancestor block, dismatch with head block, hash: %s, number: %s, headHash: %s, headNumber: %s", block.Hash(), block.NumberU64(), head.Hash(), head.Number)
+			}
+		}
 	}
 
 	// Calculate the total difficulty of the block
@@ -1295,6 +1307,9 @@ func (bc *BlockChain) writeBlockWithState(block *types.Block, receipts []*types.
 			}
 			reorg = !currentPreserve && (blockPreserve || mrand.Float64() < 0.5)
 		}
+	}
+	if _, ok := bc.engine.(*layer2.Layer2Instant); ok { // l2 engine whether reorg depend on actor, not td
+		reorg = l2rog
 	}
 	if reorg {
 		// Reorganise the chain if the parent is not the head block
@@ -1644,7 +1659,7 @@ func (bc *BlockChain) insertChain(chain types.Blocks, verifySeals bool) (int, er
 
 		// Write the block to the chain and get the status.
 		substart = time.Now()
-		status, err := bc.writeBlockWithState(block, receipts, logs, statedb, false)
+		status, err := bc.writeBlockWithState(block, receipts, logs, statedb, false, false)
 		atomic.StoreUint32(&followupInterrupt, 1)
 		if err != nil {
 			return it.index, err

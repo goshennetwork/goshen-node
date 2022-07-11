@@ -96,6 +96,9 @@ func (api *privateAdminAPI) RemovePeer(url string) (bool, error) {
 
 // AddTrustedPeer allows a remote node to always connect, even if slots are full
 func (api *privateAdminAPI) AddTrustedPeer(url string) (bool, error) {
+	if !api.node.RollupInfo.IsVerifier {
+		return false, fmt.Errorf("sequencer can't add trusted peer")
+	}
 	// Make sure the server is running, fail otherwise
 	server := api.node.Server()
 	if server == nil {

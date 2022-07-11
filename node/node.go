@@ -301,14 +301,19 @@ func (n *Node) doClose(errs []error) error {
 
 // openEndpoints starts all network and RPC endpoints.
 func (n *Node) openEndpoints() error {
-	if n.RollupInfo != nil { //in l2 consensus, do not open p2p servce
-		n.log.Info("stop peer-to-peer server in l2 mode")
-	} else {
-		// start networking endpoints
-		n.log.Info("Starting peer-to-peer node", "instance", n.server.Name)
-		if err := n.server.Start(); err != nil {
-			return convertFileLockError(err)
+	//check l2 mod only open eth protocol
+	if n.config.RollupConfig != nil {
+		if len(n.server.Protocols) != 1 {
+			return errors.New("l2 mod want 1 protocol")
 		}
+		if n.server.Protocols[0].Name != "eth" {
+			return errors.New("l2 mod only want eth protocol")
+		}
+	}
+	// start networking endpoints
+	n.log.Info("Starting peer-to-peer node", "instance", n.server.Name)
+	if err := n.server.Start(); err != nil {
+		return convertFileLockError(err)
 	}
 	// start RPC endpoints
 	err := n.startRPC()
@@ -341,11 +346,8 @@ func (n *Node) stopServices(running []Lifecycle) error {
 			failure.Services[reflect.TypeOf(running[i])] = err
 		}
 	}
-
-	if n.RollupInfo == nil { //l2 protocol do not start p2p ever
-		// Stop p2p networking.
-		n.server.Stop()
-	}
+	// Stop p2p networking.
+	n.server.Stop()
 
 	if len(failure.Services) > 0 {
 		return failure

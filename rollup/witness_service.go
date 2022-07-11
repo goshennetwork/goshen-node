@@ -49,8 +49,15 @@ func (self *WitnessService) run() {
 }
 
 func (self *WitnessService) Save(blocks []*BlockWithReceipts) {
+	chain := self.EthBackend.BlockChain()
 	for _, blockWithReceipts := range blocks {
 		block := blockWithReceipts.b
+		savedB := chain.GetBlockByNumber(block.NumberU64())
+		if savedB != nil {
+			if savedB.Hash() == block.Hash() { //already exist
+				continue
+			}
+		}
 		var logs []*types.Log
 		for i, receipt := range blockWithReceipts.r {
 			// add block location fields
@@ -66,7 +73,7 @@ func (self *WitnessService) Save(blocks []*BlockWithReceipts) {
 			logs = append(logs, receipt.Logs...)
 		}
 		// Commit block and state to database.
-		_, err := self.EthBackend.BlockChain().WriteBlockWithState(block, blockWithReceipts.r, logs, blockWithReceipts.s, true)
+		_, err := self.EthBackend.BlockChain().WriteBlockWithState(block, blockWithReceipts.r, logs, blockWithReceipts.s, true, true)
 		if err != nil { // wired
 			panic(err)
 		}

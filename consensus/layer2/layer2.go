@@ -24,15 +24,17 @@ type Layer2Instant struct {
 	Timestamp           uint64
 	L2CrossLayerWitness common.Address
 	FeeCollector        common.Address
+	IsVerifier          bool
 }
 
-func New(config *params.Layer2InstantConfig, db schema.PersistStore, dbDir string, signer types.Signer) *Layer2Instant {
+func New(config *params.Layer2InstantConfig, db schema.PersistStore, dbDir string, signer types.Signer, isVerifier bool) *Layer2Instant {
 	return &Layer2Instant{
 		Store:               store.NewStorage(db, dbDir),
 		Signer:              signer,
 		Timestamp:           uint64(time.Now().Unix()),
 		L2CrossLayerWitness: config.L2CrossLayerWitness,
 		FeeCollector:        config.FeeCollector,
+		IsVerifier:          isVerifier,
 	}
 }
 
@@ -44,8 +46,8 @@ func (self *Layer2Instant) verifyHeader(header, parent *types.Header) error {
 	if header.Coinbase != self.FeeCollector {
 		return fmt.Errorf("invalid coinbase, expected: %s, found: %s", self.FeeCollector, header.Coinbase)
 	}
-	if header.Difficulty.Sign() != 0 {
-		return fmt.Errorf("invalid difficulty, expected: 0, found: %d", header.Difficulty)
+	if header.Difficulty.Sign() < 0 {
+		return fmt.Errorf("invalid difficulty found: %d", header.Difficulty)
 	}
 	if len(header.Extra) != 0 {
 		return fmt.Errorf("extra data not nil, found: %x", header.Extra)

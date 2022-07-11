@@ -263,11 +263,7 @@ func New(stack *node.Node, config *ethconfig.Config) (*Ethereum, error) {
 	// Register the backend on the node
 	stack.RegisterAPIs(eth.APIs())
 	stack.RegisterProtocols(eth.Protocols())
-	if _, ok := eth.engine.(*layer2.Layer2Instant); ok {
-		log.Warn("skipping register eth service in layer2 mod")
-	} else {
-		stack.RegisterLifecycle(eth)
-	}
+	stack.RegisterLifecycle(eth)
 
 	// Check for unclean shutdown
 	if uncleanShutdowns, discards, err := rawdb.PushUncleanShutdownMarker(chainDb); err != nil {
@@ -311,7 +307,7 @@ func (s *Ethereum) APIs() []rpc.API {
 	apis = append(apis, s.engine.APIs(s.BlockChain())...)
 
 	// Append all the local APIs and return
-	apis = append(apis, []rpc.API{
+	return append(apis, []rpc.API{
 		{
 			Namespace: "eth",
 			Version:   "1.0",
@@ -350,19 +346,13 @@ func (s *Ethereum) APIs() []rpc.API {
 			Namespace: "debug",
 			Version:   "1.0",
 			Service:   NewPrivateDebugAPI(s),
-		},
-	}...)
-	if _, ok := s.engine.(*layer2.Layer2Instant); ok {
-		log.Warn("l2 do not open net rpc service api")
-	} else {
-		apis = append(apis, rpc.API{
+		}, {
 			Namespace: "net",
 			Version:   "1.0",
 			Service:   s.netRPCService,
 			Public:    true,
-		})
-	}
-	return apis
+		},
+	}...)
 }
 
 func (s *Ethereum) ResetWithGenesisBlock(gb *types.Block) {
