@@ -1309,7 +1309,7 @@ func (bc *BlockChain) writeBlockWithState(block *types.Block, receipts []*types.
 		}
 	}
 	if _, ok := bc.engine.(*layer2.Layer2Instant); ok { // l2 engine whether reorg depend on actor, not td
-		reorg = l2rog
+		reorg = l2rog || reorg
 	}
 	if reorg {
 		// Reorganise the chain if the parent is not the head block
