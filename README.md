@@ -20,16 +20,32 @@ https://camo.githubusercontent.com/915b7be44ada53c290eb157634330494ebe3e30a/6874
 # flowing has some implicit params, details see ./geth --help
 ./geth --l2 --datadir chaindata/ --mine --miner.etherbase "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266" --verbosity=5 --gcmode archive --http --http.addr 0.0.0.0 --http.api "eth,net,web3,txpool" --http.port 23333 --ws --ws.addr 0.0.0.0 --syncmode full --snapshot=false --nat extip:xxx:xxx:xxx:xxx console
 
-
 # set up verifier node
+# verifier may add a trusted sequencer node to get newest block which is not uploaded to l1 yet.
+
+# add trusted node's enode info to "chaindata/trusted-nodes.json"
+# format like this enode array:
+# [
+# "enode://6069a8c952466b0e715c5cc25ba5d0a7da3d72094c213642f31386dd84e24711d980ae131dc2cdae40e9fab955c0a9ade4c47a3c0c28659869f892c5deb92e52@95.90.24.242:30303",
+# "enode://6069a8c952466b0e715c5cc25ba5d0a7da3d72094c213642f31386dd84e24711d980ae131dc2cdae40e9fab955c0a9ade4c47a3c0c28659869f892c5deb92e52@95.90.24.242:30303"
+# ]
+# add static node's enode info to "chaindata/static-nodes.json"
+
 ./geth --l2 --datadir chaindata/ --mine --miner.etherbase "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266" --verbosity=5 --gcmode archive --http --http.addr 0.0.0.0 --http.port 23333 --ws --ws.addr 0.0.0.0 --verifier --syncmode full --snapshot=false --nat extip:xxx:xxx:xxx:xxx console
 ```
 
+
+
 ### differ between l2 client and ordinary geth client:
 
-- l2 client do not start ethereum protocol, which used to keep state right with other nodes
-- l2 client do not start p2p server, which used to communicate with other nodes.
-- l2 client do not update provide `PublicNetAPI`
+- l2 client only start `eth` protocol, and hook follows:
+  - `NewBlockHashesMsg`
+   - `NewBlockMsg`
+   - `BlockHeadersMsg`
+   - `BlockBodiesMsg`
+   - `NodeDataMsg`
+   - `ReceiptsMsg`
+    hook will ignore these message when remote node isn't trusted node or self consensus is sequencer mode.
 - l2 client work: when attempt to create new block, always try to execute l1 pending queue tx first, and max l1 pending queue num
   is limited by block gasLimit(though some of them may consume no gas)
 - l2 client register sync service to sync l1 contract information
@@ -40,6 +56,9 @@ witness service process the input on l1 `RollupInputChain`, and generate a list 
   - l2 client in verifier mode can not mine
   - todo: write web3.js to provide js of l2
 - **todo: provide necessary api**
+
+
+---------------------
 
 #### set test account
 ```shell
