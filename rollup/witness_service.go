@@ -8,8 +8,6 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/consensus"
-	"github.com/ethereum/go-ethereum/consensus/layer2"
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/state"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -54,7 +52,9 @@ func (self *WitnessService) Save(blocks []*BlockWithReceipts) {
 		block := blockWithReceipts.b
 		savedB := chain.GetBlockByNumber(block.NumberU64())
 		if savedB != nil {
-			if savedB.Hash() == block.Hash() { //already exist
+			if savedB.Hash() != block.Hash() {
+				log.Warn("witness found malicious block", "blockNumber", savedB.Number(), "blockHash", savedB.Hash())
+			} else { //same block do not try to writeBlockWithState, which will reset head block to this block
 				continue
 			}
 		}
@@ -203,17 +203,20 @@ func (b *blockTask) sealToBlock(chain *core.BlockChain) *BlockWithReceipts {
 }
 
 // state is parent state,just use it
-func makeBlockTask(parent *types.Header, queueNum uint64, timestamp uint64, stateDb *state.StateDB, engine consensus.Engine) *blockTask {
+func makeBlockTask(parent *types.Header, queueNum uint64, timestamp uint64, stateDb *state.StateDB, chain *core.BlockChain) *blockTask {
+	engine := chain.Engine()
 	num := parent.Number.Uint64()
 	gaslimit := parent.GasLimit
 	h := &types.Header{
 		ParentHash: parent.Hash(),
 		Number:     new(big.Int).SetUint64(num + 1),
 		GasLimit:   gaslimit,
+		Extra:      nil,
 		Time:       timestamp,
-		Coinbase:   engine.(*layer2.Layer2Instant).FeeCollector,
 	}
 	h.SetTotalExecutedQueueNum(parent.TotalExecutedQueueNum() + queueNum)
+	err := engine.Prepare(chain, h)
+	utils.Ensure(err)
 	return &blockTask{
 		header:  h,
 		statedb: stateDb.Copy(),
@@ -259,7 +262,7 @@ func RunOrderesTxs(chain *core.BlockChain, orderTxs []*binding.SubBatch, parent 
 				//no matter what tx consumed,just assume it consumes all gas
 				usedGas += tx.Gas()
 				if usedGas >= gasLimit { // a new block tak
-					blockTask := makeBlockTask(parent, uint64(len(queues)), timestamp, parentStateDb, chain.Engine())
+					blockTask := makeBlockTask(parent, uint64(len(queues)), timestamp, parentStateDb, chain)
 					CommitTransactions(chain, txs, blockTask)
 					// save blocks which have executed queues no matter what happened
 					ret = append(ret, blockTask.sealToBlock(chain))
@@ -282,7 +285,7 @@ func RunOrderesTxs(chain *core.BlockChain, orderTxs []*binding.SubBatch, parent 
 				txs = append(txs, tx)
 			}
 		}
-		blockTask := makeBlockTask(parent, uint64(len(queues)), timestamp, parentStateDb, chain.Engine())
+		blockTask := makeBlockTask(parent, uint64(len(queues)), timestamp, parentStateDb, chain)
 		txs = append(queues, txs...)
 		CommitTransactions(chain, txs, blockTask)
 		//every order txs try to seal to a block
