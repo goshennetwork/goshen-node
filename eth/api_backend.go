@@ -367,11 +367,21 @@ func (b *EthAPIBackend) ReadStorageProofAtBlock(ctx context.Context, blockNrOrHa
 	if err != nil {
 		return nil, err
 	}
+	if block == nil {
+		return nil, fmt.Errorf("cannot get block")
+	}
 	if block.NumberU64() < 1 {
-		return nil, fmt.Errorf("unsupport block")
+		return nil, fmt.Errorf("unsupported block")
+	}
+	parent := b.eth.blockchain.GetBlockByNumber(block.NumberU64() - 1)
+	if parent == nil {
+		return nil, fmt.Errorf("cannot get parent block")
 	}
 	mock := mock_state.NewMockDatabase(b.eth.blockchain.StateCache())
-	statedb, err := state.New(block.ParentHash(), mock, nil)
+	statedb, err := state.New(parent.Root(), mock, nil)
+	if err != nil {
+		return nil, err
+	}
 	_, _, _, err = b.eth.blockchain.Processor().Process(block, statedb, *b.eth.blockchain.GetVMConfig())
 	if err != nil {
 		return nil, fmt.Errorf("processing block %d failed: %v", block.NumberU64(), err)
