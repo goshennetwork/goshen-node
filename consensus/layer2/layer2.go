@@ -27,9 +27,9 @@ type Layer2Instant struct {
 	IsVerifier          bool
 }
 
-func New(config *params.Layer2InstantConfig, db schema.PersistStore, dbDir string, signer types.Signer, isVerifier bool) *Layer2Instant {
+func New(config *params.Layer2InstantConfig, db schema.PersistStore, signer types.Signer, isVerifier bool) *Layer2Instant {
 	return &Layer2Instant{
-		Store:               store.NewStorage(db, dbDir),
+		Store:               store.NewStorage(db),
 		Signer:              signer,
 		Timestamp:           uint64(time.Now().Unix()),
 		L2CrossLayerWitness: config.L2CrossLayerWitness,

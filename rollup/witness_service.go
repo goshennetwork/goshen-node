@@ -11,11 +11,47 @@ import (
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/state"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/params"
 	"github.com/laizy/log"
 	"github.com/laizy/web3/utils"
 	"github.com/ontology-layer-2/rollup-contracts/binding"
 	"github.com/ontology-layer-2/rollup-contracts/store/schema"
 )
+
+// CachedHeaderChain for l2 consensus engine prepare, only GetHeader wanted
+type CachedHeaderChain []*types.Header
+
+func newCachedHeaderChain(cap int) *CachedHeaderChain {
+	var c CachedHeaderChain = make([]*types.Header, 0, cap)
+	return &c
+}
+func (c *CachedHeaderChain) append(h *types.Header) {
+	*c = append(*c, h)
+}
+
+func (c *CachedHeaderChain) Config() *params.ChainConfig {
+	panic(1)
+}
+func (c *CachedHeaderChain) CurrentHeader() *types.Header {
+	panic(1)
+}
+
+func (c *CachedHeaderChain) GetHeader(hash common.Hash, number uint64) *types.Header {
+	for _, h := range *c {
+		if h.Hash() == hash && h.Number.Uint64() == number {
+			return h
+		}
+	}
+	return nil
+}
+
+func (c *CachedHeaderChain) GetHeaderByNumber(number uint64) *types.Header {
+	panic(1)
+}
+
+func (c *CachedHeaderChain) GetHeaderByHash(hash common.Hash) *types.Header {
+	panic(1)
+}
 
 type WitnessService struct {
 	*RollupBackend
@@ -203,7 +239,7 @@ func (b *blockTask) sealToBlock(chain *core.BlockChain) *BlockWithReceipts {
 }
 
 // state is parent state,just use it
-func makeBlockTask(parent *types.Header, queueNum uint64, timestamp uint64, stateDb *state.StateDB, chain *core.BlockChain) *blockTask {
+func makeBlockTask(parent *types.Header, queueNum uint64, timestamp uint64, stateDb *state.StateDB, chain *core.BlockChain, fakeHeaderChain *CachedHeaderChain) *blockTask {
 	engine := chain.Engine()
 	num := parent.Number.Uint64()
 	gaslimit := parent.GasLimit
@@ -215,7 +251,7 @@ func makeBlockTask(parent *types.Header, queueNum uint64, timestamp uint64, stat
 		Time:       timestamp,
 	}
 	h.SetTotalExecutedQueueNum(parent.TotalExecutedQueueNum() + queueNum)
-	err := engine.Prepare(chain, h)
+	err := engine.Prepare(fakeHeaderChain, h)
 	utils.Ensure(err)
 	return &blockTask{
 		header:  h,
@@ -232,6 +268,8 @@ type BlockWithReceipts struct {
 
 func RunOrderesTxs(chain *core.BlockChain, orderTxs []*binding.SubBatch, parent *types.Header) []*BlockWithReceipts {
 	var ret []*BlockWithReceipts
+	fakeHeaderChain := newCachedHeaderChain(len(orderTxs) + 1)
+	fakeHeaderChain.append(parent)
 	statedb, err := chain.StateAt(parent.Root)
 	if err != nil {
 		panic(err)
@@ -262,12 +300,13 @@ func RunOrderesTxs(chain *core.BlockChain, orderTxs []*binding.SubBatch, parent 
 				//no matter what tx consumed,just assume it consumes all gas
 				usedGas += tx.Gas()
 				if usedGas >= gasLimit { // a new block tak
-					blockTask := makeBlockTask(parent, uint64(len(queues)), timestamp, parentStateDb, chain)
+					blockTask := makeBlockTask(parent, uint64(len(queues)), timestamp, parentStateDb, chain, fakeHeaderChain)
 					CommitTransactions(chain, txs, blockTask)
 					// save blocks which have executed queues no matter what happened
 					ret = append(ret, blockTask.sealToBlock(chain))
 					parentB := ret[len(ret)-1]
 					parent = parentB.b.Header()
+					fakeHeaderChain.append(parent)
 					parentStateDb = blockTask.statedb
 					if tx.Gas() >= gasLimit { //should never happen
 						panic(1)
@@ -285,13 +324,14 @@ func RunOrderesTxs(chain *core.BlockChain, orderTxs []*binding.SubBatch, parent 
 				txs = append(txs, tx)
 			}
 		}
-		blockTask := makeBlockTask(parent, uint64(len(queues)), timestamp, parentStateDb, chain)
+		blockTask := makeBlockTask(parent, uint64(len(queues)), timestamp, parentStateDb, chain, fakeHeaderChain)
 		txs = append(queues, txs...)
 		CommitTransactions(chain, txs, blockTask)
 		//every order txs try to seal to a block
 		ret = append(ret, blockTask.sealToBlock(chain))
 		parentB := ret[len(ret)-1]
 		parent = parentB.b.Header()
+		fakeHeaderChain.append(parent)
 		parentStateDb = blockTask.statedb
 	}
 	return ret

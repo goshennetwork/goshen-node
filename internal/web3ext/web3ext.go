@@ -119,16 +119,71 @@ web3._extend({
 `
 
 const L2Js = `
-web3._extend.Method({
+web3._extend({
 property: 'l2',
 methods: [
+	new web3._extend.Method({
+		name: 'globalInfo',
+		call: 'l2_globalInfo',
+		params: 0
+	}),
 	new web3._extend.Method({
 		name: 'getPendingTxBatches',
 		call: 'l2_getPendingTxBatches',
 		params: 0
-	})
+	}),
+	new web3._extend.Method({
+		name: 'getState',
+		call: 'l2_getState',
+		params: 1
+	}),
+	new web3._extend.Method({
+		name:'inputBatchNumber',
+		call: 'l2_inputBatchNumber',
+		params: 0
+	}),
+	new web3._extend.Method({
+		name:'inputBatchNumber',
+		call: 'l2_inputBatchNumber',
+		params: 0
+	}),
+	new web3._extend.Method({
+		name:'stateBatchNumber',
+		call: 'l2_stateBatchNumber',
+		params: 0
+	}),
+	new web3._extend.Method({
+		name:'getEnqueuedTxs',
+		call: 'l2_getEnqueuedTxs',
+		params: 2
+	}),
+	new web3._extend.Method({
+		name:'getBatch',
+		call: 'l2_getBatch',
+		params: 2
+	}),
+	new web3._extend.Method({
+		name:'getBatchState',
+		call: 'l2_getBatchState',
+		params: 1
+	}),
+	new web3._extend.Method({
+		name:'getL2MMRProof',
+		call: 'l2_getL2MMRProof',
+		params: 2
+	}),
+	new web3._extend.Method({
+		name: 'getL1RelayMsgParams',
+		call: 'l2_getL1RelayMsgParams',
+		params: 1
+	}),
+	new web3._extend.Method({
+		name:'getL2RelayMsgParams',
+		call: 'l2_getL2RelayMsgParams',
+		params: 1
+	}),
 ]
-})
+});
 `
 
 const AdminJs = `

@@ -70,7 +70,6 @@ type Node struct {
 type RollupInfo struct {
 	//the all rollup db
 	RollupDb   schema.PersistStore
-	DBPath     string
 	L1Client   *jsonrpc.Client
 	IsVerifier bool
 }
@@ -175,7 +174,6 @@ func New(conf *Config) (*Node, error) {
 		rollupDb, err := leveldbstore.NewLevelDBStore(rollupConf.DbDir)
 		utils.Ensure(err)
 		node.RollupInfo.RollupDb = rollupDb
-		node.RollupInfo.DBPath = rollupConf.DbDir
 		node.RollupInfo.IsVerifier = conf.RollupConfig.Verifier
 		//add rpc module
 		log.Info("open l2 http&ws module")
@@ -209,7 +207,7 @@ func (n *Node) Start() error {
 		log.Info("register sync service")
 		l2client, err := jsonrpc.NewClient(n.config.RollupConfig.CliConfig.L2Rpc)
 		utils.Ensure(err)
-		syncService := sync_service.NewSyncService(n.RollupInfo.RollupDb, n.RollupInfo.L1Client, l2client, &n.config.RollupConfig.CliConfig, n.RollupInfo.DBPath)
+		syncService := sync_service.NewSyncService(n.RollupInfo.RollupDb, n.RollupInfo.L1Client, l2client, &n.config.RollupConfig.CliConfig)
 		n.lifecycles = append(n.lifecycles, syncService)
 	}
 	lifecycles := make([]Lifecycle, len(n.lifecycles))

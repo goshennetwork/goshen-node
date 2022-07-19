@@ -34,8 +34,8 @@ type RollupBackend struct {
 	IsVerifier bool
 }
 
-func NewBackend(ethBackend EthBackend, db schema.PersistStore, dbPath string, l1client *jsonrpc.Client, isVerifier bool) *RollupBackend {
-	return &RollupBackend{ethBackend, store.NewStorage(db, dbPath), l1client, isVerifier}
+func NewBackend(ethBackend EthBackend, db schema.PersistStore, l1client *jsonrpc.Client, isVerifier bool) *RollupBackend {
+	return &RollupBackend{ethBackend, store.NewStorage(db), l1client, isVerifier}
 }
 
 func (self *RollupBackend) IsSynced() bool {
@@ -126,7 +126,7 @@ func (self *RollupBackend) GetL1SentMessage(msgIndex uint64) (*schema.CrossLayer
 }
 
 func (self *RollupBackend) GetL1MMRProof(msgIndex, size uint64) ([]web3.Hash, error) {
-	return self.Store.L1CrossLayerWitness().GetL1MMRProof(msgIndex, size)
+	return self.Store.L1MMR().GetCompactMerkleTree().InclusionProof(msgIndex, size)
 }
 
 func (self *RollupBackend) GetL2BlockNumToBatchNum(blockNum uint64) uint64 {
@@ -142,5 +142,5 @@ func (self *RollupBackend) GetL2SentMessage(msgIndex uint64) (*schema.CrossLayer
 }
 
 func (self *RollupBackend) GetL2MMRProof(msgIndex, size uint64) ([]web3.Hash, error) {
-	return self.Store.L2CrossLayerWitness().GetL2MMRProof(msgIndex, size)
+	return self.Store.L2MMR().GetCompactMerkleTree().InclusionProof(msgIndex, size)
 }

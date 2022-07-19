@@ -44,12 +44,12 @@ require (
 	github.com/klauspost/compress v1.4.1 // indirect
 	github.com/klauspost/cpuid v1.2.0 // indirect
 	github.com/laizy/log v0.1.0
-	github.com/laizy/web3 v0.1.14-0.20220620104024-85b01dc47518
+	github.com/laizy/web3 v0.1.14-0.20220708063227-18490370993d
 	github.com/mattn/go-colorable v0.1.12
 	github.com/mattn/go-isatty v0.0.14
 	github.com/naoina/toml v0.1.2-0.20170918210437-9fafd6967416
 	github.com/olekukonko/tablewriter v0.0.5
-	github.com/ontology-layer-2/rollup-contracts v0.0.0-20220704100602-9f3ef84ef5e5
+	github.com/ontology-layer-2/rollup-contracts v0.1.1-0.20220719031449-59a7161cf347
 	github.com/peterh/liner v1.1.1-0.20190123174540-a2c9a5303de7
 	github.com/prometheus/tsdb v0.7.1
 	github.com/rjeczalik/notify v0.9.1
