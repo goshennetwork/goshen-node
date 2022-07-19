@@ -30,7 +30,6 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/keystore"
 	"github.com/ethereum/go-ethereum/accounts/scwallet"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/consts"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/common/math"
 	"github.com/ethereum/go-ethereum/consensus/clique"
@@ -1007,13 +1006,7 @@ func DoEstimateGas(ctx context.Context, b Backend, args TransactionArgs, blockNr
 		if block == nil {
 			return 0, errors.New("block not found")
 		}
-		cfg := b.ChainConfig()
-		gas := consts.MaxTxExecGas
-		ingas, err := core.IntrinsicGas(args.data(), nil, args.To == nil, cfg.IsHomestead(block.Number()), cfg.IsIstanbul(block.Number()), false)
-		if err != nil {
-			return 0, err
-		}
-		hi = ingas + uint64(gas)
+		hi = block.GasLimit()
 	}
 	// Normalize the max fee per gas the call is willing to spend.
 	var feeCap *big.Int

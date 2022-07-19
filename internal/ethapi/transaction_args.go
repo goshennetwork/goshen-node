@@ -24,8 +24,10 @@ import (
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/consts"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/common/math"
+	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/rpc"
@@ -172,6 +174,14 @@ func (args *TransactionArgs) setDefaults(ctx context.Context, b Backend) error {
 	return nil
 }
 
+func (args *TransactionArgs) IntrinsicGas() (uint64, error) {
+	var accessList types.AccessList
+	if args.AccessList != nil {
+		accessList = *args.AccessList
+	}
+	return core.IntrinsicGas(args.data(), accessList, args.To == nil, true, true, false)
+}
+
 // ToMessage converts the transaction arguments to the Message type used by the
 // core evm. This method is used in calls and traces that do not require a real
 // live transaction.
@@ -182,6 +192,13 @@ func (args *TransactionArgs) ToMessage(globalGasCap uint64, baseFee *big.Int) (t
 	}
 	// Set sender address or use zero address if none specified.
 	addr := args.from()
+	intrins, err := args.IntrinsicGas()
+	if err != nil {
+		return types.Message{}, err
+	}
+	if globalGasCap > intrins+consts.MaxTxExecGas {
+		globalGasCap = intrins + consts.MaxTxExecGas
+	}
 
 	// Set default gas & gas price if none were set
 	gas := globalGasCap

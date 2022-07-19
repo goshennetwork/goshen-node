@@ -26,4 +26,4 @@ const GenesisDifficulty = 1
 var L1CrossLayerWitnessSender = common.HexToAddress("0x7E5F4552091A69125d5DfCb7b8C2659029395Bdf")
 
 const IntrinsicGasFactor = 100 // we want L2 gas price 1% of L1, except intrinsic gas
-const MaxTxExecGas = 10000000  // limit the execution gas: tx.Gas - tx.IntrinsicGas
+const MaxTxExecGas = 20000000  // limit the execution gas: tx.Gas - tx.IntrinsicGas
