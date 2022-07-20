@@ -18,7 +18,7 @@ https://camo.githubusercontent.com/915b7be44ada53c290eb157634330494ebe3e30a/6874
 
 #fixme: maybe do not need to set etherbase, it's set by l2 consensus?
 # flowing has some implicit params, details see ./geth --help
-./geth --l2 --datadir chaindata/ --mine --miner.etherbase "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266" --verbosity=5 --gcmode archive --http --http.addr 0.0.0.0 --http.api "eth,net,web3,txpool" --http.port 23333 --ws --ws.addr 0.0.0.0 --syncmode full --snapshot=false --nat extip:xxx:xxx:xxx:xxx console
+./geth --l2 --datadir chaindata/ --network 21772 --mine --miner.etherbase "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266" --verbosity=5 --gcmode archive --http --http.addr 0.0.0.0 --http.api "eth,net,web3,txpool" --http.port 23333 --ws --ws.addr 0.0.0.0 --syncmode full --snapshot=false --nat extip:xxx:xxx:xxx:xxx console
 
 # set up verifier node
 # verifier may add a trusted sequencer node to get newest block which is not uploaded to l1 yet.
@@ -31,7 +31,7 @@ https://camo.githubusercontent.com/915b7be44ada53c290eb157634330494ebe3e30a/6874
 # ]
 # add static node's enode info to "chaindata/static-nodes.json"
 
-./geth --l2 --datadir chaindata/ --mine --miner.etherbase "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266" --verbosity=5 --gcmode archive --http --http.addr 0.0.0.0 --http.port 23333 --ws --ws.addr 0.0.0.0 --verifier --syncmode full --snapshot=false --nat extip:xxx:xxx:xxx:xxx console
+./geth --l2 --datadir chaindata/ --network 21772 --mine --miner.etherbase "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266" --verbosity=5 --gcmode archive --http --http.addr 0.0.0.0 --http.port 23333 --ws --ws.addr 0.0.0.0 --verifier --syncmode full --snapshot=false --nat extip:xxx:xxx:xxx:xxx console
 ```
 
 
@@ -54,7 +54,8 @@ https://camo.githubusercontent.com/915b7be44ada53c290eb157634330494ebe3e30a/6874
 witness service process the input on l1 `RollupInputChain`, and generate a list of blocks.Sequencer ensure the blocks is 
   same with local blocks, Verifier just save blocks to local.
   - l2 client in verifier mode can not mine
-  - todo: write web3.js to provide js of l2
+  - provide l2 js to console, for details just print 'l2' in console to see specific function
+  -  **Warning:** `verifier` mod do not start mining, so use 'latest' block instead `pending` block
 - **todo: provide necessary api**
 
 

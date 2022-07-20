@@ -34,6 +34,7 @@ import (
 	"github.com/ethereum/go-ethereum/common/math"
 	"github.com/ethereum/go-ethereum/consensus/clique"
 	"github.com/ethereum/go-ethereum/consensus/ethash"
+	"github.com/ethereum/go-ethereum/consensus/layer2"
 	"github.com/ethereum/go-ethereum/consensus/misc"
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/state"
@@ -1106,7 +1107,11 @@ func DoEstimateGas(ctx context.Context, b Backend, args TransactionArgs, blockNr
 // EstimateGas returns an estimate of the amount of gas needed to execute the
 // given transaction against the current pending block.
 func (s *PublicBlockChainAPI) EstimateGas(ctx context.Context, args TransactionArgs, blockNrOrHash *rpc.BlockNumberOrHash) (hexutil.Uint64, error) {
-	bNrOrHash := rpc.BlockNumberOrHashWithNumber(rpc.PendingBlockNumber)
+	n := rpc.PendingBlockNumber
+	if l, ok := s.b.Engine().(*layer2.Layer2Instant); ok && l.IsVerifier { //verifier have no pending block
+		n = rpc.LatestBlockNumber
+	}
+	bNrOrHash := rpc.BlockNumberOrHashWithNumber(n)
 	if blockNrOrHash != nil {
 		bNrOrHash = *blockNrOrHash
 	}
@@ -1383,7 +1388,11 @@ type accessListResult struct {
 // CreateAccessList creates a EIP-2930 type AccessList for the given transaction.
 // Reexec and BlockNrOrHash can be specified to create the accessList on top of a certain state.
 func (s *PublicBlockChainAPI) CreateAccessList(ctx context.Context, args TransactionArgs, blockNrOrHash *rpc.BlockNumberOrHash) (*accessListResult, error) {
-	bNrOrHash := rpc.BlockNumberOrHashWithNumber(rpc.PendingBlockNumber)
+	n := rpc.PendingBlockNumber
+	if l, ok := s.b.Engine().(*layer2.Layer2Instant); ok && l.IsVerifier {
+		n = rpc.LatestBlockNumber
+	}
+	bNrOrHash := rpc.BlockNumberOrHashWithNumber(n)
 	if blockNrOrHash != nil {
 		bNrOrHash = *blockNrOrHash
 	}
