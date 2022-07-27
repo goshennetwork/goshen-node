@@ -53,6 +53,19 @@ type GlobalInfo struct {
 	L1SyncedTimestamp   *hexutil.Uint64
 }
 
+func (self *L2Api) GetBatchIndex(blockNumber uint64) *hexutil.Uint64 {
+	if blockNumber == 0 { //genesis block have no batchIndex
+		return nil
+	}
+	batchIndex, err := self.RollupBackend.GetL2BlockNumToBatchIndex(blockNumber)
+	if err != nil {
+		log.Debug("getL2BlockNumToBatch", "err", err)
+		return nil
+	}
+	ret := hexutil.Uint64(batchIndex)
+	return &ret
+}
+
 func (self *L2Api) GlobalInfo() *GlobalInfo {
 	//maybe syncing should also return some info
 	var ret GlobalInfo
@@ -282,9 +295,11 @@ func (self *L2Api) GetL1RelayMsgParams(msgIndex uint64) (*L1RelayMsgParams, erro
 	result.Target = common.Address(msg.Target)
 	result.Sender = common.Address(msg.Sender)
 	result.Message = msg.Message
-	blockNum := msg.BlockNumber + 1
-	batchNum := self.RollupBackend.GetL2BlockNumToBatchNum(blockNum)
-	stateInfo, err := self.GetBatchState(batchNum)
+	batchIndex, err := self.RollupBackend.GetL2BlockNumToBatchIndex(msg.BlockNumber)
+	if err != nil {
+		return nil, err
+	}
+	stateInfo, err := self.GetBatchState(batchIndex)
 	if err != nil {
 		return nil, err
 	}

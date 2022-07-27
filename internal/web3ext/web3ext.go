@@ -123,6 +123,11 @@ web3._extend({
 property: 'l2',
 methods: [
 	new web3._extend.Method({
+		name: 'getBatchIndex',
+		call: 'l2_getBatchIndex',
+		params: 1
+	}),
+	new web3._extend.Method({
 		name: 'globalInfo',
 		call: 'l2_globalInfo',
 		params: 0

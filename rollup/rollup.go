@@ -9,6 +9,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethdb"
 	"github.com/ethereum/go-ethereum/log"
+	lru "github.com/hashicorp/golang-lru"
 	"github.com/laizy/web3"
 	"github.com/laizy/web3/jsonrpc"
 	"github.com/ontology-layer-2/rollup-contracts/binding"
@@ -32,10 +33,13 @@ type RollupBackend struct {
 	//l1 client
 	L1Client   *jsonrpc.Client
 	IsVerifier bool
+
+	blockCache *lru.Cache
 }
 
 func NewBackend(ethBackend EthBackend, db schema.PersistStore, l1client *jsonrpc.Client, isVerifier bool) *RollupBackend {
-	return &RollupBackend{ethBackend, store.NewStorage(db), l1client, isVerifier}
+	cache, _ := lru.New(1024)
+	return &RollupBackend{ethBackend, store.NewStorage(db), l1client, isVerifier, cache}
 }
 
 func (self *RollupBackend) IsSynced() bool {
@@ -129,12 +133,24 @@ func (self *RollupBackend) GetL1MMRProof(msgIndex, size uint64) ([]web3.Hash, er
 	return self.Store.L1MMR().GetCompactMerkleTree().InclusionProof(msgIndex, size)
 }
 
-func (self *RollupBackend) GetL2BlockNumToBatchNum(blockNum uint64) uint64 {
-	totalBlock := self.Store.L2Client().GetTotalCheckedBatchNum()
-	index := sort.Search(int(totalBlock), func(i int) bool {
+func (self *RollupBackend) GetL2BlockNumToBatchIndex(blockNumber uint64) (uint64, error) {
+	blockNum := blockNumber + 1
+	totalBatch := self.Store.L2Client().GetTotalCheckedBatchNum()
+	checkedBlockNum := self.Store.L2Client().GetTotalCheckedBlockNum(totalBatch - 1)
+	if blockNum > checkedBlockNum {
+		return 0, fmt.Errorf("have not checked yet: blockNumber: %d, checkedBlockHeight: %d", blockNum-1, checkedBlockNum-1)
+	}
+	if v, exist := self.blockCache.Get(blockNum); exist {
+		return v.(uint64), nil
+	}
+	if uint64(int(totalBatch)) != totalBatch || int(totalBatch) < 0 { //check type conversion safe
+		return 0, fmt.Errorf("totalBatch too large: totalBatch: %d", totalBatch)
+	}
+	index := sort.Search(int(totalBatch), func(i int) bool {
 		return self.Store.L2Client().GetTotalCheckedBlockNum(uint64(i)) >= blockNum
 	})
-	return uint64(index)
+	self.blockCache.Add(blockNum, uint64(index))
+	return uint64(index), nil
 }
 
 func (self *RollupBackend) GetL2SentMessage(msgIndex uint64) (*schema.CrossLayerSentMessage, error) {
