@@ -5,6 +5,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/state"
+	"github.com/ethereum/go-ethereum/crypto"
 )
 
 type MockDatabase struct {
@@ -83,9 +84,16 @@ func (m *MockDatabase) GetReadStorageKeyProof() ([][]byte, error) {
 	nodeSet := &SimpleHashSet{nodes: make(map[string][]byte, 0)}
 	for t := range m.usedTries {
 		for keyStr := range t.ReadStorageKey {
-			err := t.Prove([]byte(keyStr), 0, nodeSet)
+			key := []byte(keyStr)
+			err := t.Prove(key, 0, nodeSet)
 			if err != nil {
 				return nil, err
+			}
+			if len(key) == common.AddressLength {
+				err := t.Prove(crypto.Keccak256Hash(key).Bytes()[:], 0, nodeSet)
+				if err != nil {
+					return nil, err
+				}
 			}
 		}
 	}

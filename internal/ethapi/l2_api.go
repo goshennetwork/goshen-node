@@ -92,7 +92,7 @@ func (self *L2Api) GlobalInfo() *GlobalInfo {
 //fixme: now only support one sequencer.
 // GetPendingTxBatches return the batchCode, which is params in AppendBatch, set func selector in front of it to invoke
 //append input batch.
-func (self *L2Api) GetPendingTxBatches() []byte {
+func (self *L2Api) GetPendingTxBatches() hexutil.Bytes {
 	if !self.IsSynced() {
 		log.Warn("syncing")
 		return nil
@@ -140,11 +140,11 @@ func (self *L2Api) GetPendingTxBatches() []byte {
 	return batchesData
 }
 
-func (self *L2Api) GetState(batchIndex uint64) common.Hash {
-	if batchIndex >= self.Store.L2Client().GetTotalCheckedBatchNum() {
+func (self *L2Api) GetState(batchIndex rpc.DecimalOrHex) common.Hash {
+	if uint64(batchIndex) >= self.Store.L2Client().GetTotalCheckedBatchNum() {
 		return common.Hash{}
 	}
-	blockNum := self.Store.L2Client().GetTotalCheckedBlockNum(batchIndex)
+	blockNum := self.Store.L2Client().GetTotalCheckedBlockNum(uint64(batchIndex))
 	index := blockNum - 1
 	block := self.EthBackend.BlockChain().GetBlockByNumber(index)
 	if block == nil {
@@ -155,21 +155,21 @@ func (self *L2Api) GetState(batchIndex uint64) common.Hash {
 }
 
 // InputBatchNumber return the latest input batch number of L1
-func (self *L2Api) InputBatchNumber() (uint64, error) {
+func (self *L2Api) InputBatchNumber() (hexutil.Uint64, error) {
 	info, err := self.RollupBackend.LatestInputBatchInfo()
 	if err != nil {
 		return 0, err
 	}
-	return info.TotalBatches, nil
+	return hexutil.Uint64(info.TotalBatches), nil
 }
 
 // StateBatchNumber return the latest input batch number of L1
-func (self *L2Api) StateBatchNumber() (uint64, error) {
+func (self *L2Api) StateBatchNumber() (hexutil.Uint64, error) {
 	info, err := self.RollupBackend.LatestStateBatchInfo()
 	if err != nil {
 		return 0, err
 	}
-	return info.TotalSize, nil
+	return hexutil.Uint64(info.TotalSize), nil
 }
 
 type RPCEnqueuedTx struct {
@@ -180,8 +180,8 @@ type RPCEnqueuedTx struct {
 	Timestamp  hexutil.Uint64 `json:"timestamp"`
 }
 
-func (self *L2Api) GetEnqueuedTxs(queueStart, queueNum uint64) ([]*RPCEnqueuedTx, error) {
-	txs, err := self.RollupBackend.GetEnqueuedTxs(queueStart, queueNum)
+func (self *L2Api) GetEnqueuedTxs(queueStart, queueNum rpc.DecimalOrHex) ([]*RPCEnqueuedTx, error) {
+	txs, err := self.RollupBackend.GetEnqueuedTxs(uint64(queueStart), uint64(queueNum))
 	if err != nil {
 		return nil, err
 	}
@@ -204,12 +204,12 @@ type RPCSubBatch struct {
 }
 
 // GetBatch return the detail of batch input
-func (self *L2Api) GetBatch(batchNumber uint64, useDetail bool) (map[string]interface{}, error) {
-	batch, err := self.RollupBackend.InputBatchByNumber(batchNumber)
+func (self *L2Api) GetBatch(batchNumber rpc.DecimalOrHex, useDetail bool) (map[string]interface{}, error) {
+	batch, err := self.RollupBackend.InputBatchByNumber(uint64(batchNumber))
 	if err != nil {
 		return nil, err
 	}
-	batchData, err := self.RollupBackend.InputBatchDataByNumber(batchNumber)
+	batchData, err := self.RollupBackend.InputBatchDataByNumber(uint64(batchNumber))
 	if err != nil {
 		return nil, err
 	}
@@ -244,15 +244,15 @@ func (self *L2Api) GetBatch(batchNumber uint64, useDetail bool) (map[string]inte
 }
 
 type RPCBatchState struct {
-	Index     hexutil.Uint64
-	Proposer  common.Address
-	Timestamp hexutil.Uint64
-	BlockHash common.Hash
+	Index     hexutil.Uint64 `json:"index"`
+	Proposer  common.Address `json:"proposer"`
+	Timestamp hexutil.Uint64 `json:"timestamp"`
+	BlockHash common.Hash    `json:"blockHash"`
 }
 
 // GetBatchState return the state of batch input
-func (self *L2Api) GetBatchState(batchNumber uint64) (*RPCBatchState, error) {
-	batchState, err := self.RollupBackend.BatchState(batchNumber)
+func (self *L2Api) GetBatchState(batchNumber rpc.DecimalOrHex) (*RPCBatchState, error) {
+	batchState, err := self.RollupBackend.BatchState(uint64(batchNumber))
 	if err != nil {
 		return nil, err
 	}
@@ -264,8 +264,8 @@ func (self *L2Api) GetBatchState(batchNumber uint64) (*RPCBatchState, error) {
 	}, nil
 }
 
-func (self *L2Api) GetL2MMRProof(msgIndex, size uint64) ([]common.Hash, error) {
-	proof, err := self.RollupBackend.GetL2MMRProof(msgIndex, size)
+func (self *L2Api) GetL2MMRProof(msgIndex, size rpc.DecimalOrHex) ([]common.Hash, error) {
+	proof, err := self.RollupBackend.GetL2MMRProof(uint64(msgIndex), uint64(size))
 	if err != nil {
 		return nil, err
 	}
@@ -286,9 +286,9 @@ type L1RelayMsgParams struct {
 	Proof        []common.Hash  `json:"proof"`
 }
 
-func (self *L2Api) GetL1RelayMsgParams(msgIndex uint64) (*L1RelayMsgParams, error) {
+func (self *L2Api) GetL1RelayMsgParams(msgIndex rpc.DecimalOrHex) (*L1RelayMsgParams, error) {
 	result := &L1RelayMsgParams{MessageIndex: hexutil.Uint64(msgIndex)}
-	msg, err := self.RollupBackend.GetL2SentMessage(msgIndex)
+	msg, err := self.RollupBackend.GetL2SentMessage(uint64(msgIndex))
 	if err != nil {
 		return nil, err
 	}
@@ -299,7 +299,7 @@ func (self *L2Api) GetL1RelayMsgParams(msgIndex uint64) (*L1RelayMsgParams, erro
 	if err != nil {
 		return nil, err
 	}
-	stateInfo, err := self.GetBatchState(batchIndex)
+	stateInfo, err := self.GetBatchState(rpc.DecimalOrHex(batchIndex))
 	if err != nil {
 		return nil, err
 	}
@@ -311,7 +311,7 @@ func (self *L2Api) GetL1RelayMsgParams(msgIndex uint64) (*L1RelayMsgParams, erro
 	}
 	result.RLPHeader = rlpHeader
 	// header.nonce is MMR size
-	proofs, err := self.RollupBackend.GetL2MMRProof(msgIndex, header.Nonce.Uint64())
+	proofs, err := self.RollupBackend.GetL2MMRProof(uint64(msgIndex), header.Nonce.Uint64())
 	if err != nil {
 		return nil, err
 	}
@@ -331,9 +331,9 @@ type L2RelayMsgParams struct {
 	Proof        []common.Hash  `json:"proof"`
 }
 
-func (self *L2Api) GetL2RelayMsgParams(msgIndex uint64) (*L2RelayMsgParams, error) {
+func (self *L2Api) GetL2RelayMsgParams(msgIndex rpc.DecimalOrHex) (*L2RelayMsgParams, error) {
 	result := &L2RelayMsgParams{MessageIndex: hexutil.Uint64(msgIndex)}
-	msg, err := self.RollupBackend.GetL1SentMessage(msgIndex)
+	msg, err := self.RollupBackend.GetL1SentMessage(uint64(msgIndex))
 	if err != nil {
 		return nil, err
 	}
@@ -342,7 +342,7 @@ func (self *L2Api) GetL2RelayMsgParams(msgIndex uint64) (*L2RelayMsgParams, erro
 	result.Message = msg.Message
 	// index of l1 sent msg is MMR size
 	result.MMRSize = hexutil.Uint64(msgIndex + 1)
-	proofs, err := self.RollupBackend.GetL1MMRProof(msgIndex, uint64(result.MMRSize))
+	proofs, err := self.RollupBackend.GetL1MMRProof(uint64(msgIndex), uint64(result.MMRSize))
 	if err != nil {
 		return nil, err
 	}
