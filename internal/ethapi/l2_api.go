@@ -118,6 +118,7 @@ func (self *L2Api) GetPendingTxBatches() hexutil.Bytes {
 		BatchIndex: uint64(info.L2CheckedBatchNum),
 	}
 	var batchesData []byte
+	startQueueHeight := self.EthBackend.BlockChain().GetBlockByNumber(l2CheckedBlockNum - 1).Header().TotalExecutedQueueNum()
 	for i := uint64(0); i < maxBlockes; i++ {
 		blockNumber := i + l2CheckedBlockNum
 		block := self.EthBackend.BlockChain().GetBlockByNumber(blockNumber)
@@ -126,8 +127,8 @@ func (self *L2Api) GetPendingTxBatches() hexutil.Bytes {
 			return nil
 		}
 		txs := block.Transactions()
-		l2txs, queueNum := FilterOutQueues(txs)
-		batches.QueueNum += queueNum
+		l2txs := FilterOrigin(txs)
+		batches.QueueNum = block.Header().TotalExecutedQueueNum() - startQueueHeight
 		if len(l2txs) > 0 {
 			batches.SubBatches = append(batches.SubBatches, &binding.SubBatch{Timestamp: block.Time(), Txs: l2txs})
 		}
@@ -353,15 +354,14 @@ func (self *L2Api) GetL2RelayMsgParams(msgIndex rpc.DecimalOrHex) (*L2RelayMsgPa
 	return result, nil
 }
 
-func FilterOutQueues(txs []*types.Transaction) ([]*types.Transaction, uint64) {
+func FilterOrigin(txs []*types.Transaction) []*types.Transaction {
 	ret := make([]*types.Transaction, 0, len(txs))
-	queueNum := uint64(0)
 	for _, tx := range txs {
 		if tx.IsQueue() {
-			queueNum++
+			continue
 		} else {
 			ret = append(ret, tx)
 		}
 	}
-	return ret, queueNum
+	return ret
 }
