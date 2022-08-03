@@ -28,7 +28,6 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/consensus"
 	"github.com/ethereum/go-ethereum/consensus/ethash"
 	"github.com/ethereum/go-ethereum/core/mock_state"
@@ -175,7 +174,6 @@ func testBlockChainImport(t *testing.T, chain types.Blocks, blockchain *BlockCha
 			blockchain.reportBlock(block, receipts, err)
 			return err
 		}
-		logReadKeyProof(t, mock)
 		err = blockchain.validator.ValidateState(block, statedb, receipts, usedGas)
 		if err != nil {
 			blockchain.reportBlock(block, receipts, err)
@@ -189,19 +187,6 @@ func testBlockChainImport(t *testing.T, chain types.Blocks, blockchain *BlockCha
 		blockchain.chainmu.Unlock()
 	}
 	return nil
-}
-
-func logReadKeyProof(t *testing.T, mockDB *mock_state.MockDatabase) {
-	if mockDB == nil {
-		return
-	}
-	result, err := mockDB.GetReadStorageKeyProof()
-	if err != nil {
-		t.Fatal(err)
-	}
-	for _, node := range result {
-		t.Log(hexutil.Encode(node))
-	}
 }
 
 // testHeaderChainImport tries to process a chain of header, writing them into

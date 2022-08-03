@@ -2,23 +2,23 @@ package mock_state
 
 import (
 	"fmt"
-
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/state"
-	"github.com/ethereum/go-ethereum/crypto"
 )
+
+var emptyHash = common.Hash{}
 
 type MockDatabase struct {
 	state.Database
 	usedTries map[*MockSecureTrie]struct{} // record opened tries
-	readCode  map[common.Hash][]byte       // addrHash => contract code
+	ReadCode  map[common.Hash][]byte       // addrHash => contract code
 }
 
 func NewMockDatabase(db state.Database) *MockDatabase {
 	return &MockDatabase{
 		Database:  db,
 		usedTries: make(map[*MockSecureTrie]struct{}, 0),
-		readCode:  make(map[common.Hash][]byte, 0),
+		ReadCode:  make(map[common.Hash][]byte, 0),
 	}
 }
 
@@ -27,7 +27,7 @@ func (m *MockDatabase) OpenTrie(root common.Hash) (state.Trie, error) {
 	if err != nil {
 		return nil, err
 	}
-	mockTrie := NewMockSecureTrie(tr, root)
+	mockTrie := NewMockSecureTrie(tr, emptyHash)
 	m.usedTries[mockTrie] = struct{}{}
 	return mockTrie, nil
 }
@@ -37,7 +37,7 @@ func (m *MockDatabase) OpenStorageTrie(addrHash, root common.Hash) (state.Trie, 
 	if err != nil {
 		return nil, err
 	}
-	mockTrie := NewMockSecureTrie(tr, root)
+	mockTrie := NewMockSecureTrie(tr, addrHash)
 	m.usedTries[mockTrie] = struct{}{}
 	return mockTrie, nil
 }
@@ -55,54 +55,26 @@ func (m *MockDatabase) CopyTrie(t state.Trie) state.Trie {
 func (m *MockDatabase) ContractCode(addrHash, codeHash common.Hash) ([]byte, error) {
 	result, err := m.Database.ContractCode(addrHash, codeHash)
 	if result != nil && len(result) > 0 {
-		m.readCode[addrHash] = result
+		m.ReadCode[addrHash] = result
 	}
 	return result, err
 }
 
-type SimpleHashSet struct {
-	nodes map[string][]byte
-}
-
-// Put stores a new node in the set
-func (db *SimpleHashSet) Put(key []byte, value []byte) error {
-	if _, ok := db.nodes[string(key)]; ok {
-		return nil
-	}
-	keystr := string(key)
-	db.nodes[keystr] = common.CopyBytes(value)
-
-	return nil
-}
-
-// Delete removes a node from the set
-func (db *SimpleHashSet) Delete(key []byte) error {
-	return nil
-}
-
-func (m *MockDatabase) GetReadStorageKeyProof() ([][]byte, error) {
-	nodeSet := &SimpleHashSet{nodes: make(map[string][]byte, 0)}
+func (m *MockDatabase) GetAllKey() (map[common.Address]struct{}, map[common.Hash][]string) {
+	result1 := make(map[common.Address]struct{}, 0)
+	result2 := make(map[common.Hash][]string, 0)
 	for t := range m.usedTries {
-		for keyStr := range t.ReadStorageKey {
-			key := []byte(keyStr)
-			err := t.Prove(key, 0, nodeSet)
-			if err != nil {
-				return nil, err
+		for addr := range t.ReadAddr {
+			result1[addr] = struct{}{}
+		}
+		if t.AddrHash != emptyHash {
+			if result2[t.AddrHash] != nil {
+				result2[t.AddrHash] = make([]string, 0)
 			}
-			if len(key) == common.AddressLength {
-				err := t.Prove(crypto.Keccak256Hash(key).Bytes()[:], 0, nodeSet)
-				if err != nil {
-					return nil, err
-				}
+			for key := range t.ReadKey {
+				result2[t.AddrHash] = append(result2[t.AddrHash], key)
 			}
 		}
 	}
-	result := make([][]byte, 0)
-	for _, raw := range nodeSet.nodes {
-		result = append(result, raw)
-	}
-	for _, code := range m.readCode {
-		result = append(result, code)
-	}
-	return result, nil
+	return result1, result2
 }

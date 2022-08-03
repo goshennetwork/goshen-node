@@ -7,15 +7,27 @@ import (
 
 type MockSecureTrie struct {
 	state.Trie
-	RootHash       common.Hash
-	ReadStorageKey map[string]struct{}
+	AddrHash common.Hash
+	ReadAddr map[common.Address]struct{}
+	ReadKey  map[string]struct{}
 }
 
-func NewMockSecureTrie(trie state.Trie, rootHash common.Hash) *MockSecureTrie {
-	return &MockSecureTrie{Trie: trie, RootHash: rootHash, ReadStorageKey: make(map[string]struct{}, 0)}
+func NewMockSecureTrie(trie state.Trie, addrHash common.Hash) *MockSecureTrie {
+	result := &MockSecureTrie{Trie: trie,
+		AddrHash: addrHash,
+		ReadAddr: make(map[common.Address]struct{}, 0),
+		ReadKey:  make(map[string]struct{}, 0)}
+	return result
 }
 
 func (m *MockSecureTrie) TryGet(key []byte) ([]byte, error) {
-	m.ReadStorageKey[string(key)] = struct{}{}
+	if len(key) == common.AddressLength {
+		addr := common.BytesToAddress(key)
+		if _, ok := m.ReadAddr[addr]; !ok {
+			m.ReadAddr[addr] = struct{}{}
+		}
+	} else {
+		m.ReadKey[string(key)] = struct{}{}
+	}
 	return m.Trie.TryGet(key)
 }

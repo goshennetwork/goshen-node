@@ -18,6 +18,7 @@ package eth
 
 import (
 	"context"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"math/big"
@@ -26,6 +27,7 @@ import (
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/consts"
 	"github.com/ethereum/go-ethereum/consensus"
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/bloombits"
@@ -34,11 +36,13 @@ import (
 	"github.com/ethereum/go-ethereum/core/state"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/core/vm"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/eth/gasprice"
 	"github.com/ethereum/go-ethereum/ethdb"
 	"github.com/ethereum/go-ethereum/event"
 	"github.com/ethereum/go-ethereum/miner"
 	"github.com/ethereum/go-ethereum/params"
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/rpc"
 )
 
@@ -362,6 +366,25 @@ func (b *EthAPIBackend) StateAtTransaction(ctx context.Context, block *types.Blo
 	return b.eth.stateAtTransaction(block, txIndex, reexec)
 }
 
+type SimpleHashSet struct {
+	nodes map[string][]byte
+}
+
+// Put stores a new node in the set
+func (db *SimpleHashSet) Put(key []byte, value []byte) error {
+	if _, ok := db.nodes[string(key)]; ok {
+		return nil
+	}
+	keystr := string(key)
+	db.nodes[keystr] = common.CopyBytes(value)
+	return nil
+}
+
+// Delete removes a node from the set
+func (db *SimpleHashSet) Delete(key []byte) error {
+	return nil
+}
+
 func (b *EthAPIBackend) ReadStorageProofAtBlock(ctx context.Context, blockNrOrHash rpc.BlockNumberOrHash) ([][]byte, error) {
 	block, err := b.BlockByNumberOrHash(ctx, blockNrOrHash)
 	if err != nil {
@@ -386,5 +409,69 @@ func (b *EthAPIBackend) ReadStorageProofAtBlock(ctx context.Context, blockNrOrHa
 	if err != nil {
 		return nil, fmt.Errorf("processing block %d failed: %v", block.NumberU64(), err)
 	}
-	return mock.GetReadStorageKeyProof()
+	addresses, keys := mock.GetAllKey()
+	nodeSet := &SimpleHashSet{nodes: make(map[string][]byte, 0)}
+	parentDB, err := b.eth.blockchain.StateCache().OpenTrie(parent.Root())
+	if err != nil {
+		return nil, fmt.Errorf("cannot open parent state, %s", err)
+	}
+	// addrHash => storage root
+	storageTrie := make(map[common.Hash]state.Trie, 0)
+	for addr := range addresses {
+		addrHash := crypto.Keccak256Hash(addr.Bytes())
+		err := parentDB.Prove(addrHash.Bytes(), 0, nodeSet)
+		if err != nil {
+			return nil, fmt.Errorf("cannot proof %s, %s", addr.String(), err)
+		}
+		// try to open storage trie
+		enc, err := parentDB.TryGet(addr.Bytes())
+		if err != nil {
+			return nil, fmt.Errorf("cannot get state account %s, %s", addr.String(), err)
+		}
+		if len(enc) == 0 {
+			continue
+		}
+		acc := new(types.StateAccount)
+		err = rlp.DecodeBytes(enc, acc)
+		if err != nil {
+			return nil, fmt.Errorf("cannot decode account, %s", err)
+		}
+		if acc.Root == types.EmptyRootHash {
+			continue
+		}
+		sTrie, err := b.eth.blockchain.StateCache().OpenStorageTrie(addrHash, acc.Root)
+		if err != nil {
+			return nil, fmt.Errorf("cannot open account storage trie %s", err)
+		}
+		// off chain env require block miner(fee collector) storage
+		// however,the key of fee collector contract is usually not used during block execution.
+		if addr == consts.FeeCollector {
+			err = sTrie.Prove(acc.Root.Bytes(), 0, nodeSet)
+			if err != nil {
+				return nil, fmt.Errorf("cannot proof fee collector storage %s", err)
+			}
+		}
+		storageTrie[addrHash] = sTrie
+	}
+	for addrHash, allKey := range keys {
+		for _, keyStr := range allKey {
+			key := []byte(keyStr)
+			trie, ok := storageTrie[addrHash]
+			if !ok {
+				continue
+			}
+			err = trie.Prove(crypto.Keccak256(key), 0, nodeSet)
+			if err != nil {
+				return nil, fmt.Errorf("cannot proof %s, %s", hex.EncodeToString(key), err)
+			}
+		}
+	}
+	proofs := make([][]byte, 0)
+	for _, proof := range nodeSet.nodes {
+		proofs = append(proofs, proof)
+	}
+	for _, code := range mock.ReadCode {
+		proofs = append(proofs, code)
+	}
+	return proofs, nil
 }
