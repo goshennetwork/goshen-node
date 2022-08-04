@@ -306,6 +306,9 @@ func (self *L2Api) GetL1RelayMsgParams(msgIndex rpc.DecimalOrHex) (*L1RelayMsgPa
 	}
 	result.StateInfo = stateInfo
 	header := self.EthBackend.BlockChain().GetHeaderByHash(stateInfo.BlockHash)
+	if header == nil {
+		return nil, fmt.Errorf("no header, blockHash: %s", stateInfo.BlockHash)
+	}
 	rlpHeader, err := rlp.EncodeToBytes(header)
 	if err != nil {
 		return nil, fmt.Errorf("encode header, %s", err)
