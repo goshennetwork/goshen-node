@@ -50,8 +50,8 @@ func (self *RollupBackend) IsSynced() bool {
 		log.Warn("query l1 client failed", "err", err)
 		return false
 	}
-	//todo: avoid chain reorg event
-	return syncedHeight+6 >= l1Height
+	//more flex
+	return syncedHeight+32 >= l1Height
 }
 
 func (self *RollupBackend) GetPendingQueue(totalExecutedQueueNum uint64, gasLimit uint64) (*TxsWithContext, error) {
