@@ -34,6 +34,7 @@ import (
 	"github.com/ethereum/go-ethereum/eth/downloader"
 	_ "github.com/ethereum/go-ethereum/eth/tracers/js"
 	_ "github.com/ethereum/go-ethereum/eth/tracers/native"
+	_ "github.com/ethereum/go-ethereum/eth/tracers/rollup"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/internal/debug"
 	"github.com/ethereum/go-ethereum/internal/ethapi"
