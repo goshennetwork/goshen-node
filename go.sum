@@ -425,6 +425,8 @@ github.com/ontology-layer-2/rollup-contracts v0.1.1-0.20220722101224-c6beecbcda5
 github.com/ontology-layer-2/rollup-contracts v0.1.1-0.20220722101224-c6beecbcda56/go.mod h1:E+YHDfoMEkJed4qmZBnmwDY8duR9Ko6BIAKyu+agGXM=
 github.com/ontology-layer-2/rollup-contracts v0.1.1-0.20220803082213-e7b500168d57 h1:GHYZ+gSMgucmHJNhs2GqvoPCQOaS2pHa4jbJ3CyDvjI=
 github.com/ontology-layer-2/rollup-contracts v0.1.1-0.20220803082213-e7b500168d57/go.mod h1:QyFw17gWZ8igsPhh7cVTdtVvQ27lMEMpAETqOjTppE8=
+github.com/ontology-layer-2/rollup-contracts v0.1.1-0.20220809072206-206a6730f800 h1:wddeqnUp4txJ/cGRbImpKufYdtOyHen3gcBN90xKmGA=
+github.com/ontology-layer-2/rollup-contracts v0.1.1-0.20220809072206-206a6730f800/go.mod h1:QyFw17gWZ8igsPhh7cVTdtVvQ27lMEMpAETqOjTppE8=
 github.com/opencontainers/go-digest v1.0.0/go.mod h1:0JzlMkj0TRzQZfJkVvzbP0HBR3IKzErnv2BNG4W4MAM=
 github.com/opencontainers/image-spec v1.0.1/go.mod h1:BtxoFyWECRxE4U/7sNtV5W15zMzWCbyJoFRP3s7yZA0=
 github.com/opencontainers/runc v1.0.1/go.mod h1:aTaHFFwQXuA71CiyxOdFFIorAoemI04suvGRQFzWTD0=
