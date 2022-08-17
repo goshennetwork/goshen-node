@@ -44,7 +44,7 @@ require (
 	github.com/klauspost/compress v1.4.1 // indirect
 	github.com/klauspost/cpuid v1.2.0 // indirect
 	github.com/laizy/log v0.1.0
-	github.com/laizy/web3 v0.1.14-0.20220808113148-39eb9ee24ae0
+	github.com/laizy/web3 v0.1.14-0.20220810025812-d26ed23cbc67
 	github.com/mattn/go-colorable v0.1.12
 	github.com/mattn/go-isatty v0.0.14
 	github.com/naoina/toml v0.1.2-0.20170918210437-9fafd6967416

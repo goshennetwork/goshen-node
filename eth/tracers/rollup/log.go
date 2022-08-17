@@ -13,7 +13,6 @@ import (
 	"github.com/ethereum/go-ethereum/eth/tracers"
 	"github.com/laizy/web3"
 	"github.com/laizy/web3/registry"
-	"github.com/laizy/web3/utils"
 	"github.com/ontology-layer-2/rollup-contracts/binding"
 )
 
@@ -30,12 +29,23 @@ func init() {
 //	CaptureEnd(output []byte, gasUsed uint64, t time.Duration, err error)
 //}
 
+type RevertInfo struct {
+	ContractAddress common.Address
+	data            []byte
+}
+
+type Result struct {
+	Type string      `josn:"type"`
+	Data interface{} `json:"data"`
+}
 type logTracer struct {
 	eventEntry *registry.EventRegistry
+	alias      map[web3.Address]string
 	env        *vm.EVM
 	interrupt  uint32
 	reason     error
 	logs       []*types.Log
+	reverts    []RevertInfo
 }
 
 func newLogTracer() tracers.Tracer {
@@ -52,7 +62,7 @@ func newLogTracer() tracers.Tracer {
 	for addr, alia := range l2Addrs {
 		entry.RegisterContractAlias(addr, alia)
 	}
-	return &logTracer{entry, nil, 0, nil, nil}
+	return &logTracer{entry, l2Addrs, nil, 0, nil, nil, nil}
 }
 
 func (tracer *logTracer) CaptureStart(env *vm.EVM, from common.Address, to common.Address, create bool, input []byte, gas uint64, value *big.Int) {
@@ -61,6 +71,12 @@ func (tracer *logTracer) CaptureStart(env *vm.EVM, from common.Address, to commo
 func (tracer *logTracer) CaptureState(pc uint64, op vm.OpCode, gas, cost uint64, scope *vm.ScopeContext, rData []byte, depth int, err error) {
 	if atomic.LoadUint32(&tracer.interrupt) == 1 {
 		tracer.env.Cancel()
+		return
+	}
+	if op == vm.REVERT { //capture revert info
+		offset, size := scope.Stack.Back(0), scope.Stack.Back(1)
+		ret := scope.Memory.GetCopy(int64(offset.Uint64()), int64(size.Uint64()))
+		tracer.reverts = append(tracer.reverts, RevertInfo{scope.Contract.Address(), ret})
 		return
 	}
 	size := 0
@@ -87,23 +103,52 @@ func (tracer *logTracer) CaptureFault(pc uint64, op vm.OpCode, gas, cost uint64,
 }
 func (tracer *logTracer) CaptureEnd(output []byte, gasUsed uint64, t time.Duration, err error) {}
 func (tracer *logTracer) GetResult() (json.RawMessage, error) {
-	var ret []*web3.ParsedEvent
+	var ret []Result
 	for _, l := range tracer.logs {
+		result := Result{Type: "parsedLog"}
 		topics := make([]web3.Hash, len(l.Topics))
 		for i, v := range l.Topics {
 			topics[i] = web3.Hash(v)
 		}
 		parsed, err := tracer.eventEntry.ParseLog(&web3.Log{Address: web3.Address(l.Address), Topics: topics, Data: l.Data})
 		if err != nil {
-			return nil, fmt.Errorf("parse log failed err: %s, log info: %s", err, utils.JsonStr(l))
+			result.Type = "parseFailedLog"
+			result.Data = fmt.Errorf("parse log failed err: %s", err)
+		} else {
+			for n, v := range parsed.Values {
+				if b, ok := v.([32]byte); ok {
+					parsed.Values[n] = common.Hash(b)
+				}
+			}
+			result.Data = parsed
 		}
-		ret = append(ret, parsed)
+		ret = append(ret, result)
 	}
-	res, err := json.Marshal(ret)
+	type R struct {
+		Contract string `json:"contract"`
+		Info     string `json:"info"`
+	}
+	for _, revertInfo := range tracer.reverts {
+		result := Result{Type: "parsedRevert"}
+		name := revertInfo.ContractAddress.Hex()
+		alisa := tracer.alias[web3.Address(revertInfo.ContractAddress)]
+		if alisa != "" {
+			name = alisa
+		}
+		data, ok := web3.DecodeRevert(revertInfo.data)
+		if !ok {
+			result.Type = "parseFailedRevert"
+			result.Data = R{name, fmt.Sprintf("0x%x", revertInfo.data)}
+		} else {
+			result.Data = R{name, data}
+		}
+		ret = append(ret, result)
+	}
+	b, err := json.MarshalIndent(ret, "", " ")
 	if err != nil {
 		return nil, err
 	}
-	return json.RawMessage(res), nil
+	return json.RawMessage(b), nil
 }
 
 // Stop terminates execution of the tracer at the first opportune moment.

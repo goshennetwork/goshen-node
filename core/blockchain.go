@@ -1204,7 +1204,7 @@ func (bc *BlockChain) writeBlockWithState(block *types.Block, receipts []*types.
 			}
 			head := bc.CurrentHeader()
 			if block.NumberU64()-1 != head.Number.Uint64() || block.ParentHash() != head.Hash() {
-				return NonStatTy, fmt.Errorf("wrong ancestor block, dismatch with head block, hash: %s, number: %s, headHash: %s, headNumber: %s", block.Hash(), block.NumberU64(), head.Hash(), head.Number)
+				return NonStatTy, fmt.Errorf("wrong ancestor block, dismatch with head block, hash: %s, number: %s, headHash: %s, headNumber: %s", block.Hash(), block.Number(), head.Hash(), head.Number)
 			}
 		}
 	}
