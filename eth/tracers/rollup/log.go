@@ -34,6 +34,11 @@ type RevertInfo struct {
 	data            []byte
 }
 
+type VmErr struct {
+	ContractAddress common.Address
+	err             error
+}
+
 type Result struct {
 	Type string      `josn:"type"`
 	Data interface{} `json:"data"`
@@ -46,6 +51,7 @@ type logTracer struct {
 	reason     error
 	logs       []*types.Log
 	reverts    []RevertInfo
+	vmErr      *VmErr
 }
 
 func newLogTracer() tracers.Tracer {
@@ -62,7 +68,7 @@ func newLogTracer() tracers.Tracer {
 	for addr, alia := range l2Addrs {
 		entry.RegisterContractAlias(addr, alia)
 	}
-	return &logTracer{entry, l2Addrs, nil, 0, nil, nil, nil}
+	return &logTracer{entry, l2Addrs, nil, 0, nil, nil, nil, nil}
 }
 
 func (tracer *logTracer) CaptureStart(env *vm.EVM, from common.Address, to common.Address, create bool, input []byte, gas uint64, value *big.Int) {
@@ -78,6 +84,9 @@ func (tracer *logTracer) CaptureState(pc uint64, op vm.OpCode, gas, cost uint64,
 		ret := scope.Memory.GetCopy(int64(offset.Uint64()), int64(size.Uint64()))
 		tracer.reverts = append(tracer.reverts, RevertInfo{scope.Contract.Address(), ret})
 		return
+	}
+	if err != nil && tracer.vmErr == nil { //capture inner vm error only once
+		tracer.vmErr = &VmErr{scope.Contract.Address(), err}
 	}
 	size := 0
 	switch op {
@@ -142,6 +151,16 @@ func (tracer *logTracer) GetResult() (json.RawMessage, error) {
 		} else {
 			result.Data = R{name, data}
 		}
+		ret = append(ret, result)
+	}
+	if tracer.vmErr != nil {
+		name := tracer.vmErr.ContractAddress.Hex()
+		alisa := tracer.alias[web3.Address(tracer.vmErr.ContractAddress)]
+		if alisa != "" {
+			name = alisa
+		}
+		result := Result{Type: "VM INNER ERROR"}
+		result.Data = R{name, tracer.vmErr.err.Error()}
 		ret = append(ret, result)
 	}
 	b, err := json.MarshalIndent(ret, "", " ")
