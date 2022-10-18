@@ -126,7 +126,10 @@ func (self *WitnessService) Work() error {
 		log.Debug("have checked all l2 batches", "checkedBatchNum", checkedBatchNum, "l2 total", l2Batches)
 		return nil
 	}
-	lastIndex := checkedBatchNum - 1
+	lastIndex := uint64(0)
+	if checkedBatchNum > 0 {
+		lastIndex = checkedBatchNum - 1
+	}
 	checkedBlockNum := self.Store.L2Client().GetTotalCheckedBlockNum(lastIndex)
 	//now only check one batch
 	input, err := inputChainStore.GetAppendedTransaction(checkedBatchNum)
@@ -301,7 +304,7 @@ func RunOrderesTxs(chain *core.BlockChain, orderTxs []*binding.SubBatch, parent 
 				usedGas += tx.Gas()
 				if usedGas >= gasLimit { // a new block tak
 					blockTask := makeBlockTask(parent, uint64(len(queues)), timestamp, parentStateDb, chain, fakeHeaderChain)
-					CommitTransactions(chain, txs, blockTask)
+					CommitTransactions(chain, queues, blockTask)
 					// save blocks which have executed queues no matter what happened
 					ret = append(ret, blockTask.sealToBlock(chain))
 					parentB := ret[len(ret)-1]
@@ -348,6 +351,7 @@ func (b *blockTask) TotalNonQueueTxSize() uint64 {
 }
 
 func CommitTransactions(chain *core.BlockChain, txs []*types.Transaction, task *blockTask) {
+	log.Debug("commitTransactions", "blockNumber", task.header.Number.Uint64(), "txNum", len(txs))
 	txIndex := 0
 	for _, tx := range txs {
 		statedb := task.statedb
