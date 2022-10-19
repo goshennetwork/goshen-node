@@ -31,6 +31,7 @@ var Modules = map[string]string{
 	"les":      LESJs,
 	"vflux":    VfluxJs,
 	"l2":       L2Js,
+	"utils":    Utils,
 }
 
 const CliqueJs = `
@@ -115,6 +116,19 @@ web3._extend({
 			params: 2,
 		}),
 	]
+});
+`
+
+const Utils = `
+web3._extend({
+property: 'utils',
+methods: [
+	new web3._extend.Method({
+		name: 'saveString',
+		call: 'utils_saveString',
+		params: 2
+	})
+]
 });
 `
 

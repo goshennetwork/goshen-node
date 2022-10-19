@@ -8,6 +8,7 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/rawdb"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/rollup"
@@ -20,14 +21,16 @@ type L2Api struct {
 }
 
 func Apis(backend *rollup.RollupBackend) []rpc.API {
-	return []rpc.API{
-		{
-			Namespace: "l2",
-			Version:   "1.0",
-			Service:   newL2Api(backend),
-			Public:    true,
-		},
-	}
+	return append(UtilsApis(backend),
+		[]rpc.API{
+			{
+				Namespace: "l2",
+				Version:   "1.0",
+				Service:   newL2Api(backend),
+				Public:    true,
+			},
+		}...,
+	)
 }
 
 func newL2Api(rollupBackend *rollup.RollupBackend) *L2Api {
@@ -178,6 +181,7 @@ type RPCEnqueuedTx struct {
 	From       common.Address `json:"from"`
 	To         common.Address `json:"to"`
 	RlpTx      hexutil.Bytes  `json:"rlpTx"`
+	TxHash     common.Hash    `json:"txHash"`
 	Timestamp  hexutil.Uint64 `json:"timestamp"`
 }
 
@@ -193,6 +197,7 @@ func (self *L2Api) GetEnqueuedTxs(queueStart, queueNum rpc.DecimalOrHex) ([]*RPC
 			From:       common.Address(tx.From),
 			To:         common.Address(tx.To),
 			RlpTx:      tx.RlpTx,
+			TxHash:     crypto.Keccak256Hash(tx.RlpTx),
 			Timestamp:  hexutil.Uint64(tx.Timestamp),
 		})
 	}
