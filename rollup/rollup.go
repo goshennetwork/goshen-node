@@ -25,6 +25,7 @@ type TxsWithContext struct {
 type EthBackend interface {
 	BlockChain() *core.BlockChain
 	ChainDb() ethdb.Database
+	TxPool() *core.TxPool
 }
 
 type RollupBackend struct {

@@ -1356,6 +1356,12 @@ func setTxPool(ctx *cli.Context, cfg *core.TxPoolConfig) {
 	if ctx.GlobalIsSet(TxPoolNoLocalsFlag.Name) {
 		cfg.NoLocals = ctx.GlobalBool(TxPoolNoLocalsFlag.Name)
 	}
+
+	//l2 also claim price
+	if ctx.GlobalBool(RollupEnableFlag.Name) {
+		log.Info("l2 disable local tx price")
+		cfg.NoLocals = true
+	}
 	if ctx.GlobalIsSet(TxPoolJournalFlag.Name) {
 		cfg.Journal = ctx.GlobalString(TxPoolJournalFlag.Name)
 	}
@@ -1763,11 +1769,19 @@ func RegisterEthService(stack *node.Node, cfg *ethconfig.Config) (ethapi.Backend
 	return backend.APIBackend, backend
 }
 
-func RegisterWitnessService(stack *node.Node, rollupBackend *rollup.RollupBackend) {
+func RegisterRollupService(stack *node.Node, rollupBackend *rollup.RollupBackend) *rollup.PriceOracleService {
+	//witness service
+	log.Info("register witness service in l2 consensus.")
 	witnessService := rollup.NewWitnessService(rollupBackend)
 	stack.RegisterLifecycle(witnessService)
+	//l1 gasprice oracle
+	log.Info("register l1 gasprice oracle in l2 consensus")
+	priceOracleService := rollup.NewPriceOracleService(rollupBackend)
+	stack.RegisterLifecycle(priceOracleService)
 	//register upload api
 	stack.RegisterAPIs(ethapi.Apis(rollupBackend))
+	//return priceOracleService object, which will replace old gasprice oracle.
+	return priceOracleService
 }
 
 // RegisterEthStatsService configures the Ethereum Stats daemon and adds it to

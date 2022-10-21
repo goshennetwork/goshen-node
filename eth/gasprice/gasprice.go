@@ -18,6 +18,7 @@ package gasprice
 
 import (
 	"context"
+	"errors"
 	"math/big"
 	"sort"
 	"sync"
@@ -147,6 +148,9 @@ func NewOracle(backend OracleBackend, params Config) *Oracle {
 // necessary to add the basefee to the returned number to fall back to the legacy
 // behavior.
 func (oracle *Oracle) SuggestTipCap(ctx context.Context) (*big.Int, error) {
+	if oracle.backend.ChainConfig().Layer2Instant != nil { //l2 node use minner's gasPrice
+		return nil, errors.New("l2 consensus do not go through here")
+	}
 	head, _ := oracle.backend.HeaderByNumber(ctx, rpc.LatestBlockNumber)
 	headHash := head.Hash()
 

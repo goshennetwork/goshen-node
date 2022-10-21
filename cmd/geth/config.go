@@ -164,8 +164,8 @@ func makeFullNode(ctx *cli.Context) (*node.Node, ethapi.Backend) {
 	//if consensus is l2, register rollup service
 	if _, ok := backend.Engine().(*layer2.Layer2Instant); ok {
 		//register sync service after http start
-		log.Info("register witness service in l2 consensus.")
-		utils.RegisterWitnessService(stack, eth.RollupBackend())
+		l1priceOracle := utils.RegisterRollupService(stack, eth.RollupBackend())
+		eth.TxPool().InjectPriceOracle(l1priceOracle)
 	}
 
 	// Configure catalyst.

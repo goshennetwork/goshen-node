@@ -175,7 +175,7 @@ var DefaultTxPoolConfig = TxPoolConfig{
 	Rejournal: time.Hour,
 
 	PriceLimit: 1,
-	PriceBump:  10,
+	PriceBump:  1, // l2 default price bump is 1
 
 	AccountSlots: 16,
 	GlobalSlots:  4096 + 1024, // urgent + floating queue capacity with 4:1 ratio
@@ -269,6 +269,11 @@ type TxPool struct {
 	initDoneCh      chan struct{}  // is closed once the pool is initialized (for tests)
 
 	changesSinceReorg int // A counter for how many drops we've performed in-between reorg.
+	GasPriceOracle    GasPriceOracle
+}
+
+type GasPriceOracle interface {
+	L2Price(txpoolPrice *big.Int) (*big.Int, error)
 }
 
 type txpoolResetRequest struct {
@@ -537,6 +542,19 @@ func (pool *TxPool) ContentFrom(addr common.Address) (types.Transactions, types.
 func (pool *TxPool) Pending(enforceTips bool) map[common.Address]types.Transactions {
 	pool.mu.Lock()
 	defer pool.mu.Unlock()
+	l2price := pool.gasPrice
+	if pool.chainconfig.Layer2Instant != nil {
+		if pool.GasPriceOracle == nil {
+			log.Warn("waiting gasPrice oracle injecting")
+			return nil
+		}
+		_l2price, err := pool.GasPriceOracle.L2Price(pool.gasPrice)
+		if err != nil {
+			log.Warn("get l2price", "err", err)
+			return nil
+		}
+		l2price = _l2price
+	}
 
 	pending := make(map[common.Address]types.Transactions)
 	for addr, list := range pool.pending {
@@ -545,7 +563,7 @@ func (pool *TxPool) Pending(enforceTips bool) map[common.Address]types.Transacti
 		// If the miner requests tip enforcement, cap the lists now
 		if enforceTips && !pool.locals.contains(addr) {
 			for i, tx := range txs {
-				if tx.EffectiveGasTipIntCmp(pool.gasPrice, pool.priced.urgent.baseFee) < 0 {
+				if tx.EffectiveGasTipIntCmp(l2price, pool.priced.urgent.baseFee) < 0 {
 					txs = txs[:i]
 					break
 				}
@@ -1778,4 +1796,8 @@ func (t *txLookup) RemotesBelowTip(threshold *big.Int) types.Transactions {
 // numSlots calculates the number of slots needed for a single transaction.
 func numSlots(tx *types.Transaction) int {
 	return int((tx.Size() + txSlotSize - 1) / txSlotSize)
+}
+
+func (self *TxPool) InjectPriceOracle(o GasPriceOracle) {
+	self.GasPriceOracle = o
 }

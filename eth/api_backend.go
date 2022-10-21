@@ -300,6 +300,12 @@ func (b *EthAPIBackend) SyncProgress() ethereum.SyncProgress {
 }
 
 func (b *EthAPIBackend) SuggestGasTipCap(ctx context.Context) (*big.Int, error) {
+	if b.ChainConfig().Layer2Instant != nil { // l2 consensus do not use gpo
+		if b.eth.TxPool().GasPriceOracle == nil {
+			return nil, errors.New("waiting gasprice oracle injecting")
+		}
+		return b.eth.TxPool().GasPriceOracle.L2Price(b.eth.TxPool().GasPrice())
+	}
 	return b.gpo.SuggestTipCap(ctx)
 }
 
