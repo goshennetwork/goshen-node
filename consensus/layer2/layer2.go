@@ -15,12 +15,9 @@ import (
 	"github.com/ethereum/go-ethereum/params"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/ethereum/go-ethereum/trie"
-	"github.com/ontology-layer-2/rollup-contracts/store"
-	"github.com/ontology-layer-2/rollup-contracts/store/schema"
 )
 
 type Layer2Instant struct {
-	Store               *store.Storage
 	Signer              types.Signer
 	Timestamp           uint64
 	L2CrossLayerWitness common.Address
@@ -28,10 +25,9 @@ type Layer2Instant struct {
 	IsVerifier          bool
 }
 
-func New(config *params.Layer2InstantConfig, db schema.PersistStore, signer types.Signer, isVerifier bool) *Layer2Instant {
+func New(config *params.Layer2InstantConfig, signer types.Signer, isVerifier bool) *Layer2Instant {
 	consts.FeeCollector = config.FeeCollector
 	return &Layer2Instant{
-		Store:               store.NewStorage(db),
 		Signer:              signer,
 		Timestamp:           uint64(time.Now().Unix()),
 		L2CrossLayerWitness: config.L2CrossLayerWitness,

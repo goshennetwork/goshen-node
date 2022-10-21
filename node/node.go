@@ -71,6 +71,7 @@ type RollupInfo struct {
 	//the all rollup db
 	RollupDb   schema.PersistStore
 	L1Client   *jsonrpc.Client
+	StoreLock  *sync.Mutex
 	IsVerifier bool
 }
 
@@ -165,7 +166,7 @@ func New(conf *Config) (*Node, error) {
 
 	rollupConf := conf.RollupConfig
 	if rollupConf != nil {
-		node.RollupInfo = &RollupInfo{}
+		node.RollupInfo = &RollupInfo{StoreLock: &sync.Mutex{}}
 		//if not empty, try to set up rollup store
 		node.RollupInfo.L1Client, err = jsonrpc.NewClient(rollupConf.CliConfig.L1Rpc)
 		if err != nil {
@@ -207,7 +208,7 @@ func (n *Node) Start() error {
 		log.Info("register sync service")
 		l2client, err := jsonrpc.NewClient(n.config.RollupConfig.CliConfig.L2Rpc)
 		utils.Ensure(err)
-		syncService := sync_service.NewSyncService(n.RollupInfo.RollupDb, n.RollupInfo.L1Client, l2client, &n.config.RollupConfig.CliConfig)
+		syncService := sync_service.NewSyncService(n.RollupInfo.RollupDb, n.RollupInfo.StoreLock, n.RollupInfo.L1Client, l2client, &n.config.RollupConfig.CliConfig)
 		n.lifecycles = append(n.lifecycles, syncService)
 	}
 	lifecycles := make([]Lifecycle, len(n.lifecycles))

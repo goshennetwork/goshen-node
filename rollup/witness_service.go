@@ -2,6 +2,7 @@ package rollup
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"math/big"
 	"sort"
@@ -68,7 +69,7 @@ func (self *WitnessService) Start() error {
 }
 
 func (self *WitnessService) run() {
-	ticker := time.NewTicker(1 * time.Second)
+	ticker := time.NewTicker(2 * time.Second)
 	for {
 		select {
 		case <-ticker.C:
@@ -78,7 +79,6 @@ func (self *WitnessService) run() {
 		case <-self.quit:
 			return
 		}
-
 	}
 }
 
@@ -118,64 +118,186 @@ func (self *WitnessService) Save(blocks []*BlockWithReceipts) {
 }
 
 func (self *WitnessService) Work() error {
-	inputChainStore := self.Store.InputChain()
-	l2Batches := inputChainStore.GetInfo().TotalBatches
-
-	checkedBatchNum := self.Store.L2Client().GetTotalCheckedBatchNum()
-	if checkedBatchNum >= l2Batches {
-		log.Debug("have checked all l2 batches", "checkedBatchNum", checkedBatchNum, "l2 total", l2Batches)
-		return nil
+	highestL1CheckPoint := self.Store.GetHighestL1CheckPointInfo()
+	if highestL1CheckPoint == nil {
+		return errors.New("no l1 checkpoint yet")
 	}
-	lastIndex := uint64(0)
-	if checkedBatchNum > 0 {
-		lastIndex = checkedBatchNum - 1
+	startPoint := highestL1CheckPoint.StartPoint
+	if startPoint < 1 {
+		return errors.New("l1 checkpoint not old enough")
 	}
-	checkedBlockNum := self.Store.L2Client().GetTotalCheckedBlockNum(lastIndex)
-	//now only check one batch
-	input, err := inputChainStore.GetAppendedTransaction(checkedBatchNum)
-	utils.Ensure(err)
 
-	data, err := inputChainStore.GetSequencerBatchData(input.Index)
-	if err != nil {
-		//not found, should never happen
+	localVersion := self.Store.L2Client().GetVersion()
+	dbVersion := self.Store.GetL1DbVersion()
+	rollbackBlock := false
+	// something happend when reuse an old rollupdb, when setup, local db version is zero, which may differ from old, just return 0, to reorg
+	info := self.Store.L2Client().GetPendingCheckPoint()
+	if highestL1CheckPoint.StartPoint < info.StartPoint { // should never happen
 		panic(1)
 	}
+	var oldTxs []*types.Transaction
+	if dbVersion != localVersion {
+		if dbVersion < localVersion { //should never happen
+			panic(1)
+		}
+		log.Info("different version found, try to rollback node state...")
+		// handle batch
+		//every version gap just ez return to last version until version 0
+		// i.e. db version 0 -> 1 -> 2 -> 3 -> 4 -> 5   l2client version last index 4 -> db version 1;now version up to 5 means
+		// the worst db situation is that db state actual roll back to version 0.
+		rollbackBlock = true
+		//now just write totalBatches to specific batchIndex
+		writer := self.Store.Writer()
+		writer.L2Client().StoreTotalCheckedBatchNum(info.BatchIndex + 1 - 1) // start from last batch
+		writer.Commit()
 
-	parentBlock := self.EthBackend.BlockChain().GetBlockByNumber(checkedBlockNum - 1)
-	blocks, inputHash := ProcessBatch(data, parentBlock.Hash(), self.RollupBackend)
-	utils.EnsureTrue(inputHash == input.InputHash)
-	if self.IsVerifier { //verifier store blocks
-		self.Save(blocks)
-	} else {
-		for i, blockWithReceipt := range blocks {
-			local := self.EthBackend.BlockChain().GetBlockByNumber(checkedBlockNum + uint64(i))
-			block := blockWithReceipt.b
-			if !bytes.Equal(local.Hash().Bytes(), block.Hash().Bytes()) {
-				log.Error("wrong block found", "got number", block.Number(), "local number", local.Number(), "got hash", block.Hash(), "local hash", local.Hash())
-				for _, tx := range local.Transactions() {
-					log.Info("local tx", "hash", tx.Hash(), "queue", tx.IsQueue())
-				}
-				for _, tx := range block.Transactions() {
-					log.Info("seal tx", "hash", tx.Hash(), "queue", tx.IsQueue())
-				}
-				log.Info("header", "local", utils.JsonStr(local.Header()), "got", utils.JsonStr(block.Header()))
-				return fmt.Errorf("failed")
-			}
+		//handle l2 blocks
+	}
+	sequencerRollBack := rollbackBlock && !self.IsVerifier
+
+	// after roll back, try to move old tx when roll back finished, only self is miner
+	if sequencerRollBack {
+		head := self.EthBackend.BlockChain().CurrentHeader()
+		checkedBatchNum := self.Store.L2Client().GetTotalCheckedBatchNum()
+		lastIndex := uint64(0)
+		if checkedBatchNum > 0 {
+			lastIndex = checkedBatchNum - 1
+		}
+		checkedBlockNum := self.Store.L2Client().GetTotalCheckedBlockNum(lastIndex)
+		for blockNumber := checkedBlockNum; blockNumber <= head.Number.Uint64(); blockNumber++ {
+			oldTxs = append(oldTxs, self.EthBackend.BlockChain().GetBlockByNumber(blockNumber).Transactions()...)
 		}
 	}
-	checkedBlockNum += uint64(len(blocks))
-	checkedBatchNum += 1
 
-	//now store witnessed state
+	first := true
+	alreadyRun := false
+	for {
+		writer := self.Store.Writer()
+		pendingInfo := self.Store.L2Client().GetPendingCheckPoint()
+		inputChainStore := self.Store.InputChain()
+		l2Batches := inputChainStore.GetInfo().TotalBatches
+		checkedBatchNum := self.Store.L2Client().GetTotalCheckedBatchNum()
+		lastIndex := uint64(0)
+		if checkedBatchNum > 0 {
+			lastIndex = checkedBatchNum - 1
+		}
+		run := checkedBatchNum < l2Batches //there is some batch to run
+		if !run && !first {                //only permit first run to go pass
+			break
+		}
+		first = false
+		if run {
+			alreadyRun = true
+			checkedBlockNum := self.Store.L2Client().GetTotalCheckedBlockNum(lastIndex)
+			//now only check one batch
+			input, err := inputChainStore.GetAppendedTransaction(checkedBatchNum)
+			if err != nil {
+				// not found, roll back happens
+				return err
+			}
+
+			data, err := inputChainStore.GetSequencerBatchData(input.Index)
+			if err != nil {
+				// not found, roll back happens
+				return err
+			}
+
+			parentBlock := self.EthBackend.BlockChain().GetBlockByNumber(checkedBlockNum - 1)
+			//r1cs debug
+			log.Warn("r1cs debug", "want block number", checkedBlockNum-1, "head block number", self.EthBackend.BlockChain().CurrentHeader().Number.Uint64(), "batchIndex", checkedBatchNum)
+
+			blocks, inputHash, err := ProcessBatch(data, parentBlock.Hash(), self.RollupBackend)
+			if err != nil { // only roll back happen occur
+				return err
+			}
+			utils.EnsureTrue(inputHash == input.InputHash)
+
+			if self.IsVerifier || rollbackBlock { //verifier store blocks, roll back also save blocks
+				self.Save(blocks)
+			} else {
+				for i, blockWithReceipt := range blocks {
+					local := self.EthBackend.BlockChain().GetBlockByNumber(checkedBlockNum + uint64(i))
+					block := blockWithReceipt.b
+					if !bytes.Equal(local.Hash().Bytes(), block.Hash().Bytes()) {
+						log.Error("wrong block found", "got number", block.Number(), "local number", local.Number(), "got hash", block.Hash(), "local hash", local.Hash())
+						for _, tx := range local.Transactions() {
+							log.Info("local tx", "hash", tx.Hash(), "queue", tx.IsQueue())
+						}
+						for _, tx := range block.Transactions() {
+							log.Info("seal tx", "hash", tx.Hash(), "queue", tx.IsQueue())
+						}
+						log.Info("header", "local", utils.JsonStr(local.Header()), "got", utils.JsonStr(block.Header()))
+						return fmt.Errorf("failed")
+					}
+				}
+			}
+			checkedBlockNum += uint64(len(blocks))
+			checkedBatchNum += 1
+			writer.L2Client().StoreTotalCheckedBatchNum(checkedBatchNum)
+			//save batch index => block num
+			writer.L2Client().StoreCheckedBlockNum(checkedBatchNum-1, checkedBlockNum)
+		}
+
+		head := self.EthBackend.BlockChain().CurrentHeader()
+		// every cycle read start point,to update batchindex to latest checkpoint
+		startPoint = self.Store.GetHighestL1CheckPointInfo().StartPoint
+		if startPoint > pendingInfo.StartPoint { //if start point update, update startPoint with batchIndex
+			if run {
+				log.Debug("save confirmPoint", "pending batchIndex", checkedBatchNum-1, "startpoint", startPoint, "pending block number", head.Number.Uint64())
+				writer.L2Client().StorePendingCheckpoint(&schema.L2CheckPointInfo{startPoint, checkedBatchNum - 1, head.Number.Uint64()})
+			} else { //move batch index to pending batchIndex, so next time will not roll back batch
+				log.Debug("save confirmPoint", "pending batchIndex", checkedBatchNum, "startpoint", startPoint, "prnding block number", head.Number.Uint64())
+				writer.L2Client().StorePendingCheckpoint(&schema.L2CheckPointInfo{startPoint, checkedBatchNum, head.Number.Uint64()})
+			}
+		}
+		writer.Commit()
+		self.EthBackend.TxPool().AddLocals(oldTxs)
+		oldTxs = oldTxs[:0] //clean oldTxs
+	}
 	writer := self.Store.Writer()
-	writer.L2Client().StoreTotalCheckedBatchNum(checkedBatchNum)
-	//save batch index => block num
-	writer.L2Client().StoreCheckedBlockNum(checkedBatchNum-1, checkedBlockNum)
+	writer.L2Client().SetVersion(dbVersion) // now update local version to db Version
 	writer.Commit()
+
+	if !rollbackBlock { // no need to roll back
+		return nil
+	}
+	if alreadyRun {
+		// if have already run do not need to roll back block, because head block now is newest
+		return nil
+	}
+	// need roll back and have not yet rolled back, try to roll back block
+	return self.RollBackBlock()
+}
+
+func (self *WitnessService) RollBackBlock() error {
+	pendingInfo := self.Store.L2Client().GetPendingCheckPoint()
+	if pendingInfo.BlockNumber < 1 {
+		return fmt.Errorf("pending info blockNumber less than 1")
+	}
+	totalBatch := self.Store.L2Client().GetTotalCheckedBatchNum()
+	lastIndex := uint64(0)
+	if totalBatch > 0 {
+		lastIndex = totalBatch - 1
+	}
+	totalBlock := self.Store.L2Client().GetTotalCheckedBlockNum(lastIndex)
+	//cut down， but ensure not cut down to checked batch number
+	newHead := pendingInfo.BlockNumber - 1
+	if newHead < totalBlock-1 {
+		newHead = totalBlock - 1
+	}
+	var oldTxs []*types.Transaction
+	for i := pendingInfo.BlockNumber; i <= self.EthBackend.BlockChain().CurrentHeader().Number.Uint64(); i++ {
+		oldTxs = append(oldTxs, self.EthBackend.BlockChain().GetBlockByNumber(i).Transactions()...)
+	}
+	if err := self.EthBackend.BlockChain().SetHead(newHead); err != nil {
+		return err
+	}
+	self.EthBackend.TxPool().AddLocals(oldTxs)
+	log.Warn("cutting down chain head", "number", newHead)
 	return nil
 }
 
-func ProcessBatch(input []byte, parentBlockHash common.Hash, rollupBackend *RollupBackend) ([]*BlockWithReceipts, [32]byte) {
+func ProcessBatch(input []byte, parentBlockHash common.Hash, rollupBackend *RollupBackend) ([]*BlockWithReceipts, [32]byte, error) {
 	eth := rollupBackend.EthBackend
 	parent := eth.BlockChain().GetBlockByHash(parentBlockHash)
 	inputChainStore := rollupBackend.Store.InputChain()
@@ -187,8 +309,8 @@ func ProcessBatch(input []byte, parentBlockHash common.Hash, rollupBackend *Roll
 		panic(1)
 	}
 	queues, err := inputChainStore.GetEnqueuedTransactions(batch.QueueStart, batch.QueueNum)
-	if err != nil {
-		panic(err)
+	if err != nil { // may happen when roll back
+		return nil, [32]byte{}, err
 	}
 
 	var orderTxs []*binding.SubBatch
@@ -218,7 +340,7 @@ func ProcessBatch(input []byte, parentBlockHash common.Hash, rollupBackend *Roll
 	sort.SliceStable(orderTxs, func(i, j int) bool {
 		return orderTxs[i].Timestamp < orderTxs[j].Timestamp
 	})
-	return RunOrderesTxs(eth.BlockChain(), orderTxs, parent.Header()), batch.InputHash(schema.CalcQueueHash(queues))
+	return RunOrderesTxs(eth.BlockChain(), orderTxs, parent.Header()), batch.InputHash(schema.CalcQueueHash(queues)), nil
 
 }
 
