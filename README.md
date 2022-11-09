@@ -10,6 +10,15 @@ https://camo.githubusercontent.com/915b7be44ada53c290eb157634330494ebe3e30a/6874
 [![Discord](https://img.shields.io/badge/discord-join%20chat-blue.svg)](https://discord.gg/nthXNEv)
 
 
+## setup test l1 client
+```shell
+
+npx hardhat node --network hardhat --hostname 0.0.0.0
+
+*\note: make sure every l1 block's timestamp is unique, otherwise tx order is wrong' \*
+```
+
+
 ## setup l2 client
 
 ```shell

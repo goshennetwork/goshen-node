@@ -321,7 +321,7 @@ func RunOrderesTxs(chain *core.BlockChain, orderTxs []*binding.SubBatch, parent 
 			case false: //l2 origin tx
 				//check l2 origin tx first
 				if err := core.ValidateTx(tx, parentStateDb, types.LatestSigner(chain.Config()), cfg, true); err != nil {
-					log.Error("validate tx failed", "hash", tx.Hash())
+					log.Error("validate tx failed", "hash", tx.Hash(), "err", err, "txs", txs)
 					continue
 				}
 				txs = append(txs, tx)
