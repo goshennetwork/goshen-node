@@ -46,16 +46,6 @@ func (self *PriceOracleService) run() {
 				log.Warn("get l1 gasprice", "err", err)
 			}
 			self.SetL1Price(l1price)
-			//reset txpool gasprice
-			l2price, err := self.L2Price(self.EthBackend.TxPool().GasPrice())
-			if err != nil {
-				log.Warn("get l2 price", "err", err)
-				continue
-			}
-			l2price.Mul(l2price, big.NewInt(7))  // l2 price = l2price * 7
-			l2price.Div(l2price, big.NewInt(10)) // l2 price = l2price / 10
-
-			self.EthBackend.TxPool().SetGasPrice(l2price)
 		}
 	}
 }
@@ -71,15 +61,15 @@ func (self *PriceOracleService) Stop() error {
 func (self *PriceOracleService) SetL1Price(price uint64) { atomic.StoreUint64(&self.l1price, price) }
 func (self *PriceOracleService) L1Price() uint64         { return atomic.LoadUint64(&self.l1price) }
 func (self *PriceOracleService) IsRunning() bool         { return atomic.LoadUint32(&self.running) == 1 }
-func (self *PriceOracleService) L2Price(minerGasPrice *big.Int) (*big.Int, error) {
+func (self *PriceOracleService) L2Price(minPrice *big.Int) (*big.Int, error) {
 	if !self.IsRunning() {
 		return nil, errors.New("l1 gasPrice oracle not running")
 	}
 
 	l1price := self.L1Price()
 	l2price := new(big.Int).Div(new(big.Int).SetUint64(l1price), new(big.Int).SetUint64(uint64(consts.IntrinsicGasFactor)))
-	if l2price.Cmp(minerGasPrice) < 0 {
-		l2price = new(big.Int).Set(minerGasPrice)
+	if l2price.Cmp(minPrice) < 0 {
+		l2price.Set(minPrice) //0.1gwei
 	}
 	return l2price, nil
 }

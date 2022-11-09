@@ -273,7 +273,7 @@ type TxPool struct {
 }
 
 type GasPriceOracle interface {
-	L2Price(txpoolPrice *big.Int) (*big.Int, error)
+	L2Price(minPrice *big.Int) (*big.Int, error)
 }
 
 type txpoolResetRequest struct {
@@ -603,9 +603,24 @@ func (pool *TxPool) local() map[common.Address]types.Transactions {
 // validateTx checks whether a transaction is valid according to the consensus
 // rules and adheres to some heuristic limits of the local node (price and size).
 func (pool *TxPool) validateTx(tx *types.Transaction, local bool) error {
+	if pool.GasPriceOracle == nil {
+		return errors.New("not injected yet")
+	}
+	l2price, err := pool.GasPriceOracle.L2Price(pool.gasPrice)
+	if err != nil {
+		return err
+	}
+	// price should be factory to 10/13, so normal user set price 1, only when price is up to 1.3, price 1 should
+	// be reject
+	l2price.Mul(l2price, big.NewInt(10)) // l2 price = l2price * 10
+	l2price.Div(l2price, big.NewInt(13)) // l2 price = l2price / 13
+	min := new(big.Int).Set(pool.gasPrice)
+	if l2price.Cmp(min) < 0 { // should never less than min l2 price
+		l2price = min
+	}
 	cfg := ValidDataTxConfig{
 		MaxGas:   pool.currentMaxGas,
-		GasPrice: pool.gasPrice,
+		GasPrice: l2price,
 		BaseFee:  pool.priced.urgent.baseFee,
 		Istanbul: pool.istanbul,
 		Eip1559:  pool.eip1559,
