@@ -60,21 +60,25 @@ func (m *MockDatabase) ContractCode(addrHash, codeHash common.Hash) ([]byte, err
 	return result, err
 }
 
-func (m *MockDatabase) GetAllKey() (map[common.Address]struct{}, map[common.Hash][]string) {
+func (m *MockDatabase) GetAllKey() (map[common.Address]struct{}, map[common.Hash][]string, map[common.Hash]bool) {
 	result1 := make(map[common.Address]struct{}, 0)
 	result2 := make(map[common.Hash][]string, 0)
+	result3 := make(map[common.Hash]bool, 0)
 	for t := range m.usedTries {
 		for addr := range t.ReadAddr {
 			result1[addr] = struct{}{}
 		}
 		if t.AddrHash != emptyHash {
-			if result2[t.AddrHash] != nil {
+			if result2[t.AddrHash] == nil {
 				result2[t.AddrHash] = make([]string, 0)
 			}
 			for key := range t.ReadKey {
 				result2[t.AddrHash] = append(result2[t.AddrHash], key)
 			}
 		}
+		for key := range t.GetUsedNodeKey() {
+			result3[key] = true
+		}
 	}
-	return result1, result2
+	return result1, result2, result3
 }

@@ -66,6 +66,8 @@ type Trie struct {
 	// hashing operation. This number will not directly map to the number of
 	// actually unhashed nodes
 	unhashed int
+
+	usedNode map[common.Hash]bool
 }
 
 // newFlag returns the cache flag value for a newly created node.
@@ -84,7 +86,8 @@ func New(root common.Hash, db *Database) (*Trie, error) {
 		panic("trie.New called without a database")
 	}
 	trie := &Trie{
-		db: db,
+		db:       db,
+		usedNode: make(map[common.Hash]bool, 0),
 	}
 	if root != (common.Hash{}) && root != emptyRoot {
 		rootnode, err := trie.resolveHash(root[:], nil)
@@ -509,6 +512,7 @@ func (t *Trie) resolve(n node, prefix []byte) (node, error) {
 func (t *Trie) resolveHash(n hashNode, prefix []byte) (node, error) {
 	hash := common.BytesToHash(n)
 	if node := t.db.node(hash); node != nil {
+		t.usedNode[hash] = true
 		return node, nil
 	}
 	return nil, &MissingNodeError{NodeHash: hash, Path: prefix}
@@ -586,4 +590,8 @@ func (t *Trie) hashRoot() (node, node, error) {
 func (t *Trie) Reset() {
 	t.root = nil
 	t.unhashed = 0
+}
+
+func (t *Trie) GetUsedNodeKey() map[common.Hash]bool {
+	return t.usedNode
 }

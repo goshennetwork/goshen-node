@@ -217,3 +217,7 @@ func (t *SecureTrie) getSecKeyCache() map[string][]byte {
 	}
 	return t.secKeyCache
 }
+
+func (t *SecureTrie) GetUsedNodeKey() map[common.Hash]bool {
+	return t.trie.GetUsedNodeKey()
+}

@@ -44,6 +44,7 @@ import (
 	"github.com/ethereum/go-ethereum/params"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/rpc"
+	"github.com/ethereum/go-ethereum/trie"
 )
 
 // EthAPIBackend implements ethapi.Backend for full nodes
@@ -423,7 +424,7 @@ func (b *EthAPIBackend) ReadStorageProofAtBlock(ctx context.Context, blockNrOrHa
 	if err != nil {
 		return nil, fmt.Errorf("processing block %d failed: %v", block.NumberU64(), err)
 	}
-	addresses, keys := mock.GetAllKey()
+	addresses, keys, allNodes := mock.GetAllKey()
 	nodeSet := &SimpleHashSet{nodes: make(map[string][]byte, 0)}
 	parentDB, err := b.eth.blockchain.StateCache().OpenTrie(parent.Root())
 	if err != nil {
@@ -479,6 +480,14 @@ func (b *EthAPIBackend) ReadStorageProofAtBlock(ctx context.Context, blockNrOrHa
 				return nil, fmt.Errorf("cannot proof %s, %s", hex.EncodeToString(key), err)
 			}
 		}
+	}
+	db := trie.NewDatabaseWithConfig(b.eth.chainDb, &trie.Config{Cache: 16})
+	for nodeHash := range allNodes {
+		data, err := db.Node(nodeHash)
+		if err != nil {
+			continue
+		}
+		_ = nodeSet.Put(nodeHash.Bytes(), data)
 	}
 	proofs := make([][]byte, 0)
 	for _, proof := range nodeSet.nodes {

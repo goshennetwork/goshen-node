@@ -31,3 +31,7 @@ func (m *MockSecureTrie) TryGet(key []byte) ([]byte, error) {
 	}
 	return m.Trie.TryGet(key)
 }
+
+func (t *MockSecureTrie) GetUsedNodeKey() map[common.Hash]bool {
+	return t.Trie.GetUsedNodeKey()
+}

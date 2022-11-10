@@ -355,11 +355,7 @@ github.com/labstack/echo/v4 v4.2.1/go.mod h1:AA49e0DZ8kk5jTOOCKNuPR6oTnBS0dYiM4F
 github.com/labstack/gommon v0.3.0/go.mod h1:MULnywXg0yavhxWKc+lOruYdAhDwPK9wf0OL7NoOu+k=
 github.com/laizy/log v0.1.0 h1:PVsiKvIOdU+X3OwclBB+5BEv03GkH/7BTHCkcYq9poA=
 github.com/laizy/log v0.1.0/go.mod h1:FOqFMdeGZfogMZLUMdW+vLayGe6Jp1DrcAP0Oaqy+lc=
-github.com/laizy/web3 v0.1.14-0.20220708063227-18490370993d h1:EtY5Yh73ZJ2WBQjX5pbCx/ofbd5xmgt0c6CEawMUuso=
-github.com/laizy/web3 v0.1.14-0.20220708063227-18490370993d/go.mod h1:JlZEgyIf5AP6E4622lHRNyzzucdQyhyIoZfRG+cldDk=
 github.com/laizy/web3 v0.1.14-0.20220801034644-528b47955083/go.mod h1:JlZEgyIf5AP6E4622lHRNyzzucdQyhyIoZfRG+cldDk=
-github.com/laizy/web3 v0.1.14-0.20220808113148-39eb9ee24ae0 h1:U4FyHA8aylQVYgp1cpC0ieCtG0tYfgX1oLLiEiiG5r0=
-github.com/laizy/web3 v0.1.14-0.20220808113148-39eb9ee24ae0/go.mod h1:JlZEgyIf5AP6E4622lHRNyzzucdQyhyIoZfRG+cldDk=
 github.com/laizy/web3 v0.1.14-0.20220810025812-d26ed23cbc67 h1:URtS9Bp6HALSwHp2ffWH2UXXsNkK0UWR8GS2VA6Ud/U=
 github.com/laizy/web3 v0.1.14-0.20220810025812-d26ed23cbc67/go.mod h1:JlZEgyIf5AP6E4622lHRNyzzucdQyhyIoZfRG+cldDk=
 github.com/leanovate/gopter v0.2.9 h1:fQjYxZaynp97ozCzfOyOuAGOU4aU/z37zf/tOujFk7c=
@@ -425,10 +421,6 @@ github.com/onsi/gomega v1.4.3/go.mod h1:ex+gbHU/CVuBBDIJjb2X0qEXbFg53c61hWP/1Cpa
 github.com/onsi/gomega v1.7.1/go.mod h1:XdKZgCCFLUoM/7CFJVPcG8C1xQ1AJ0vpAezJrB7JYyY=
 github.com/onsi/gomega v1.10.1 h1:o0+MgICZLuZ7xjH7Vx6zS/zcu93/BEp1VwkIW1mEXCE=
 github.com/onsi/gomega v1.10.1/go.mod h1:iN09h71vgCQne3DLsj+A5owkum+a2tYe+TOCB1ybHNo=
-github.com/ontology-layer-2/rollup-contracts v0.1.1-0.20220722101224-c6beecbcda56 h1:Pi6v81FTpPXiW7kBukZl2gUMxmjKM6kQBgiMrKbQs3Y=
-github.com/ontology-layer-2/rollup-contracts v0.1.1-0.20220722101224-c6beecbcda56/go.mod h1:E+YHDfoMEkJed4qmZBnmwDY8duR9Ko6BIAKyu+agGXM=
-github.com/ontology-layer-2/rollup-contracts v0.1.1-0.20220803082213-e7b500168d57 h1:GHYZ+gSMgucmHJNhs2GqvoPCQOaS2pHa4jbJ3CyDvjI=
-github.com/ontology-layer-2/rollup-contracts v0.1.1-0.20220803082213-e7b500168d57/go.mod h1:QyFw17gWZ8igsPhh7cVTdtVvQ27lMEMpAETqOjTppE8=
 github.com/ontology-layer-2/rollup-contracts v0.1.1-0.20220809072206-206a6730f800 h1:wddeqnUp4txJ/cGRbImpKufYdtOyHen3gcBN90xKmGA=
 github.com/ontology-layer-2/rollup-contracts v0.1.1-0.20220809072206-206a6730f800/go.mod h1:QyFw17gWZ8igsPhh7cVTdtVvQ27lMEMpAETqOjTppE8=
 github.com/opencontainers/go-digest v1.0.0/go.mod h1:0JzlMkj0TRzQZfJkVvzbP0HBR3IKzErnv2BNG4W4MAM=
