@@ -175,6 +175,11 @@ func (self *WitnessService) Work() error {
 	return nil
 }
 
+type OrderTxs struct {
+	isQueue  bool
+	subBatch *binding.SubBatch
+}
+
 func ProcessBatch(input []byte, parentBlockHash common.Hash, rollupBackend *RollupBackend) ([]*BlockWithReceipts, [32]byte) {
 	eth := rollupBackend.EthBackend
 	parent := eth.BlockChain().GetBlockByHash(parentBlockHash)
@@ -190,8 +195,7 @@ func ProcessBatch(input []byte, parentBlockHash common.Hash, rollupBackend *Roll
 	if err != nil {
 		panic(err)
 	}
-
-	var orderTxs []*binding.SubBatch
+	var orderTxs []*OrderTxs
 	txs := &binding.SubBatch{}
 	last := len(queues) - 1
 	for i, enqueue := range queues {
@@ -202,21 +206,23 @@ func ProcessBatch(input []byte, parentBlockHash common.Hash, rollupBackend *Roll
 		} else {
 			if timestamp != txs.Timestamp {
 				//append first
-				orderTxs = append(orderTxs, txs)
+				orderTxs = append(orderTxs, &OrderTxs{isQueue: true, subBatch: txs})
 				txs = &binding.SubBatch{timestamp, nil}
 			}
 			txs.Txs = append(txs.Txs, tx)
 		}
 		if i == last {
-			orderTxs = append(orderTxs, txs)
+			orderTxs = append(orderTxs, &OrderTxs{isQueue: true, subBatch: txs})
 		}
 
 	}
-	orderTxs = append(orderTxs, batch.SubBatches...)
+	for _, subBatch := range batch.SubBatches {
+		orderTxs = append(orderTxs, &OrderTxs{isQueue: false, subBatch: subBatch})
+	}
 
 	//sort in timestamp
 	sort.SliceStable(orderTxs, func(i, j int) bool {
-		return orderTxs[i].Timestamp < orderTxs[j].Timestamp
+		return orderTxs[i].subBatch.Timestamp < orderTxs[j].subBatch.Timestamp
 	})
 	return RunOrderesTxs(eth.BlockChain(), orderTxs, parent.Header()), batch.InputHash(schema.CalcQueueHash(queues))
 
@@ -269,7 +275,7 @@ type BlockWithReceipts struct {
 	r []*types.Receipt
 }
 
-func RunOrderesTxs(chain *core.BlockChain, orderTxs []*binding.SubBatch, parent *types.Header) []*BlockWithReceipts {
+func RunOrderesTxs(chain *core.BlockChain, orderTxs []*OrderTxs, parent *types.Header) []*BlockWithReceipts {
 	var ret []*BlockWithReceipts
 	fakeHeaderChain := newCachedHeaderChain(len(orderTxs) + 1)
 	fakeHeaderChain.append(parent)
@@ -289,15 +295,12 @@ func RunOrderesTxs(chain *core.BlockChain, orderTxs []*binding.SubBatch, parent 
 	gasLimit := parent.GasLimit
 	parentStateDb := statedb
 	for i := 0; i < len(orderTxs); i++ {
-		timestamp := orderTxs[i].Timestamp
-		isQueue := false
-		if len(orderTxs[i].Txs) > 0 {
-			isQueue = orderTxs[i].Txs[0].IsQueue()
-		}
+		timestamp := orderTxs[i].subBatch.Timestamp
+		isQueue := orderTxs[i].isQueue
 		usedGas := uint64(0)
 		var txs []*types.Transaction
 		var queues []*types.Transaction
-		for _, tx := range orderTxs[i].Txs {
+		for _, tx := range orderTxs[i].subBatch.Txs {
 			switch isQueue {
 			case true: //queue tx
 				//no matter what tx consumed,just assume it consumes all gas
