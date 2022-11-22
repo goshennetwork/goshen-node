@@ -48,7 +48,7 @@ func (m *MockDatabase) CopyTrie(t state.Trie) state.Trie {
 	case *MockSecureTrie:
 		switch T:=t.Trie.(type) {
 		case *trie.SecureTrie:
-			return NewMockSecureTrie(T.Copy(),common.Hash{})
+			return &MockSecureTrie{T.Copy(),t.AddrHash,t.ReadAddr,t.ReadKey}
 		default:
 			panic(fmt.Errorf("unknow trie type %T",T))
 		}
