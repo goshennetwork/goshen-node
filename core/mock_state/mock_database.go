@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/state"
+	"github.com/ethereum/go-ethereum/trie"
 )
 
 var emptyHash = common.Hash{}
@@ -45,11 +46,16 @@ func (m *MockDatabase) OpenStorageTrie(addrHash, root common.Hash) (state.Trie, 
 func (m *MockDatabase) CopyTrie(t state.Trie) state.Trie {
 	switch t := t.(type) {
 	case *MockSecureTrie:
-		cpy := *t
-		return &cpy
+		switch T:=t.Trie.(type) {
+		case *trie.SecureTrie:
+			return NewMockSecureTrie(T.Copy(),common.Hash{})
+		default:
+			panic(fmt.Errorf("unknow trie type %T",T))
+		}
 	default:
 		panic(fmt.Errorf("unknown trie type %T", t))
 	}
+	panic(1)
 }
 
 func (m *MockDatabase) ContractCode(addrHash, codeHash common.Hash) ([]byte, error) {
