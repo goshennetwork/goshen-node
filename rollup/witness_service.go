@@ -324,6 +324,11 @@ func RunOrderesTxs(chain *core.BlockChain, orderTxs []*binding.SubBatch, parent 
 					CommitTransactions(chain, queues, blockTask)
 					// save blocks which have executed queues no matter what happened
 					ret = append(ret, blockTask.sealToBlock(chain))
+					// use block task state
+					err = readStorageProofAtBlock(mock, proofDB, parentStateDb)
+					if err != nil {
+						panic(err)
+					}
 					parentB := ret[len(ret)-1]
 					parent = parentB.b.Header()
 					fakeHeaderChain.append(parent)
