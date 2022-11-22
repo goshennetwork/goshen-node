@@ -48,4 +48,5 @@ profile.cov
 
 **/yarn-error.log
 
+chaindata-*
 chaindata
