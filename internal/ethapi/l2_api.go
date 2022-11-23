@@ -225,6 +225,7 @@ func (self *L2Api) GetBatch(batchNumber rpc.DecimalOrHex, useDetail bool) (map[s
 	result["batchHash"] = batch.InputHash.String()
 	result["queueNum"] = hexutil.Uint64(batch.QueueNum)
 	result["queueStart"] = hexutil.Uint64(batch.StartQueueIndex)
+	result["version"] = hexutil.Uint64(batchData.Version)
 	formatTx := func(tx *types.Transaction) interface{} {
 		return tx.Hash()
 	}
