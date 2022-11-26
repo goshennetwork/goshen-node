@@ -2,6 +2,7 @@ module github.com/ethereum/go-ethereum
 
 go 1.15
 
+replace github.com/ontology-layer-2/rollup-contracts => ../rollup-contracts
 require (
 	github.com/Azure/azure-storage-blob-go v0.7.0
 	github.com/VictoriaMetrics/fastcache v1.6.0

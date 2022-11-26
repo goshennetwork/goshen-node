@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"sort"
+	"sync"
 
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -29,8 +30,9 @@ type EthBackend interface {
 }
 
 type RollupBackend struct {
-	EthBackend EthBackend
-	Store      *store.Storage
+	EthBackend     EthBackend
+	Store          *store.Storage
+	StoreDirtyLock *sync.Mutex
 	//l1 client
 	L1Client   *jsonrpc.Client
 	IsVerifier bool
@@ -38,9 +40,9 @@ type RollupBackend struct {
 	blockCache *lru.Cache
 }
 
-func NewBackend(ethBackend EthBackend, db schema.PersistStore, l1client *jsonrpc.Client, isVerifier bool) *RollupBackend {
+func NewBackend(ethBackend EthBackend, db schema.PersistStore, storeDirtyLock *sync.Mutex, l1client *jsonrpc.Client, isVerifier bool) *RollupBackend {
 	cache, _ := lru.New(1024)
-	return &RollupBackend{ethBackend, store.NewStorage(db), l1client, isVerifier, cache}
+	return &RollupBackend{ethBackend, store.NewStorage(db), storeDirtyLock, l1client, isVerifier, cache}
 }
 
 func (self *RollupBackend) IsSynced() bool {
@@ -59,6 +61,7 @@ func (self *RollupBackend) GetPendingQueue(totalExecutedQueueNum uint64, gasLimi
 	if !self.IsSynced() {
 		return nil, errors.New("not synced yet")
 	}
+
 	l1Time := self.Store.GetLastSyncedL1Timestamp()
 	if l1Time == nil {
 		return nil, fmt.Errorf("no synced l1 timestamp")

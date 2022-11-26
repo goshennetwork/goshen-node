@@ -699,8 +699,8 @@ func (w *worker) resultLoop() {
 				}
 				logs = append(logs, receipt.Logs...)
 			}
-			// Commit block and state to database.
-			_, err := w.chain.WriteBlockWithState(block, receipts, logs, task.state, true, true)
+			// Commit block and state to database.Do not force l2 reog, make sure when rollback, witness service should rollback success.
+			_, err := w.chain.WriteBlockWithState(block, receipts, logs, task.state, true, false)
 			if err != nil {
 				log.Error("Failed writing block to chain", "err", err)
 				continue
