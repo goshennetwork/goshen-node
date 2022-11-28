@@ -2,15 +2,19 @@ package rollup
 
 import (
 	"bytes"
+	"encoding/hex"
 	"fmt"
 	"math/big"
 	"sort"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/consts"
 	"github.com/ethereum/go-ethereum/core"
+	"github.com/ethereum/go-ethereum/core/mock_state"
 	"github.com/ethereum/go-ethereum/core/state"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/params"
 	"github.com/laizy/log"
 	"github.com/laizy/web3/utils"
@@ -142,7 +146,9 @@ func (self *WitnessService) Work() error {
 	}
 
 	parentBlock := self.EthBackend.BlockChain().GetBlockByNumber(checkedBlockNum - 1)
-	blocks, inputHash := ProcessBatch(data, parentBlock.Hash(), self.RollupBackend)
+	proofDB := NewSimpleHashSet()
+	mock := mock_state.NewMockDatabase(self.EthBackend.BlockChain().StateCache())
+	blocks, inputHash := ProcessBatch(data, parentBlock.Hash(), self.RollupBackend, mock, proofDB)
 	utils.EnsureTrue(inputHash == input.InputHash)
 	if self.IsVerifier { //verifier store blocks
 		self.Save(blocks)
@@ -171,11 +177,21 @@ func (self *WitnessService) Work() error {
 	writer.L2Client().StoreTotalCheckedBatchNum(checkedBatchNum)
 	//save batch index => block num
 	writer.L2Client().StoreCheckedBlockNum(checkedBatchNum-1, checkedBlockNum)
+
+	proofs := make([][]byte, 0)
+	for _, proof := range proofDB.Nodes {
+		proofs = append(proofs, proof)
+	}
+	for _, code := range mock.ReadCode {
+		proofs = append(proofs, code)
+	}
+	writer.L2Client().StoreReadStorageProof(checkedBatchNum-1, proofs)
 	writer.Commit()
 	return nil
 }
 
-func ProcessBatch(input []byte, parentBlockHash common.Hash, rollupBackend *RollupBackend) ([]*BlockWithReceipts, [32]byte) {
+func ProcessBatch(input []byte, parentBlockHash common.Hash, rollupBackend *RollupBackend,
+	mock *mock_state.MockDatabase, proofDB *SimpleHashSet) ([]*BlockWithReceipts, [32]byte) {
 	eth := rollupBackend.EthBackend
 	parent := eth.BlockChain().GetBlockByHash(parentBlockHash)
 	inputChainStore := rollupBackend.Store.InputChain()
@@ -218,7 +234,8 @@ func ProcessBatch(input []byte, parentBlockHash common.Hash, rollupBackend *Roll
 	sort.SliceStable(orderTxs, func(i, j int) bool {
 		return orderTxs[i].Timestamp < orderTxs[j].Timestamp
 	})
-	return RunOrderesTxs(eth.BlockChain(), orderTxs, parent.Header()), batch.InputHash(schema.CalcQueueHash(queues))
+	return RunOrderesTxs(eth.BlockChain(), orderTxs, parent.Header(), mock, proofDB),
+		batch.InputHash(schema.CalcQueueHash(queues))
 
 }
 
@@ -269,11 +286,12 @@ type BlockWithReceipts struct {
 	r []*types.Receipt
 }
 
-func RunOrderesTxs(chain *core.BlockChain, orderTxs []*binding.SubBatch, parent *types.Header) []*BlockWithReceipts {
+func RunOrderesTxs(chain *core.BlockChain, orderTxs []*binding.SubBatch, parent *types.Header,
+	mock *mock_state.MockDatabase, proofDB *SimpleHashSet) []*BlockWithReceipts {
 	var ret []*BlockWithReceipts
 	fakeHeaderChain := newCachedHeaderChain(len(orderTxs) + 1)
 	fakeHeaderChain.append(parent)
-	statedb, err := chain.StateAt(parent.Root)
+	statedb, err := state.New(parent.Root, mock, nil)
 	if err != nil {
 		panic(err)
 	}
@@ -307,6 +325,11 @@ func RunOrderesTxs(chain *core.BlockChain, orderTxs []*binding.SubBatch, parent 
 					CommitTransactions(chain, queues, blockTask)
 					// save blocks which have executed queues no matter what happened
 					ret = append(ret, blockTask.sealToBlock(chain))
+					// use block task state
+					err = readStorageProofAtBlock(mock, proofDB, parentStateDb)
+					if err != nil {
+						panic(err)
+					}
 					parentB := ret[len(ret)-1]
 					parent = parentB.b.Header()
 					fakeHeaderChain.append(parent)
@@ -332,12 +355,85 @@ func RunOrderesTxs(chain *core.BlockChain, orderTxs []*binding.SubBatch, parent 
 		CommitTransactions(chain, txs, blockTask)
 		//every order txs try to seal to a block
 		ret = append(ret, blockTask.sealToBlock(chain))
+		// use block task state
+		err = readStorageProofAtBlock(mock, proofDB, parentStateDb)
+		if err != nil {
+			panic(err)
+		}
 		parentB := ret[len(ret)-1]
 		parent = parentB.b.Header()
 		fakeHeaderChain.append(parent)
 		parentStateDb = blockTask.statedb
 	}
 	return ret
+}
+
+type SimpleHashSet struct {
+	Nodes map[string][]byte
+}
+
+func NewSimpleHashSet() *SimpleHashSet {
+	return &SimpleHashSet{Nodes: make(map[string][]byte)}
+}
+
+// Put stores a new node in the set
+func (db *SimpleHashSet) Put(key []byte, value []byte) error {
+	if _, ok := db.Nodes[string(key)]; ok {
+		return nil
+	}
+	keystr := string(key)
+	db.Nodes[keystr] = common.CopyBytes(value)
+	return nil
+}
+
+// Delete removes a node from the set
+func (db *SimpleHashSet) Delete(key []byte) error {
+	return nil
+}
+
+func readStorageProofAtBlock(mock *mock_state.MockDatabase, nodeSet *SimpleHashSet, parentDB *state.StateDB) error {
+	addresses, keys, allNodes := mock.GetAllKey()
+	// addrHash => storage root
+	storageTrie := make(map[common.Hash]state.Trie, 0)
+	for addr := range addresses {
+		addrHash := crypto.Keccak256Hash(addr.Bytes())
+		proofs, err := parentDB.GetProof(addr)
+		if err != nil {
+			return fmt.Errorf("cannot proof %s, %s", addr.String(), err)
+		}
+		for _, p := range proofs {
+			_ = nodeSet.Put(crypto.Keccak256(p), p)
+		}
+		sTrie := parentDB.StorageTrie(addr)
+		storageTrie[addrHash] = sTrie
+	}
+	for addrHash, allKey := range keys {
+		for _, keyStr := range allKey {
+			key := []byte(keyStr)
+			sTrie, ok := storageTrie[addrHash]
+			if !ok {
+				continue
+			}
+			err := sTrie.Prove(crypto.Keccak256(key), 0, nodeSet)
+			if err != nil {
+				return fmt.Errorf("cannot proof %s, %s", hex.EncodeToString(key), err)
+			}
+		}
+	}
+	feeCollectorTrie := parentDB.StorageTrie(consts.FeeCollector)
+	err := feeCollectorTrie.Prove(common.Hash{}.Bytes(), 0, nodeSet)
+	if err != nil {
+		return fmt.Errorf("cannot proof fee collector, %s", err)
+	}
+	db := parentDB.Database().TrieDB()
+	for nodeHash := range allNodes {
+		data, err := db.Node(nodeHash)
+		if err != nil {
+			continue
+		}
+		_ = nodeSet.Put(nodeHash.Bytes(), data)
+	}
+	return nil
 }
 
 func (b *blockTask) TotalNonQueueTxSize() uint64 {

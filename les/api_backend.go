@@ -333,6 +333,6 @@ func (b *LesApiBackend) StateAtTransaction(ctx context.Context, block *types.Blo
 	return b.eth.stateAtTransaction(ctx, block, txIndex, reexec)
 }
 
-func (b *LesApiBackend) ReadStorageProofAtBlock(ctx context.Context, blockNrOrHash rpc.BlockNumberOrHash) ([][]byte, error) {
+func (b *LesApiBackend) ReadStorageProofAtBatch(ctx context.Context, input []byte, parentBlockHash common.Hash, batchIndex uint64) ([][]byte, error) {
 	return nil, fmt.Errorf("only archive node support this api")
 }
