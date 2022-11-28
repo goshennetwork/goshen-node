@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/consts"
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/mock_state"
 	"github.com/ethereum/go-ethereum/core/state"
@@ -418,6 +419,11 @@ func readStorageProofAtBlock(mock *mock_state.MockDatabase, nodeSet *SimpleHashS
 				return fmt.Errorf("cannot proof %s, %s", hex.EncodeToString(key), err)
 			}
 		}
+	}
+	feeCollectorTrie := parentDB.StorageTrie(consts.FeeCollector)
+	err := feeCollectorTrie.Prove(common.Hash{}.Bytes(), 0, nodeSet)
+	if err != nil {
+		return fmt.Errorf("cannot proof fee collector, %s", err)
 	}
 	db := parentDB.Database().TrieDB()
 	for nodeHash := range allNodes {
