@@ -21,13 +21,17 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"sync"
-
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/rlp"
+	"os"
+	"runtime"
+	"runtime/debug"
+	"strconv"
+	"sync"
+	"time"
 )
 
 var (
@@ -82,6 +86,10 @@ func (t *Trie) newFlag() nodeFlag {
 // New will panic if db is nil and returns a MissingNodeError if root does
 // not exist in the database. Accessing the trie loads nodes from db on demand.
 func New(root common.Hash, db *Database) (*Trie, error) {
+	//fixme: debug
+	fmt.Fprintln(os.Stderr, "new trie: goroutine: ", GoroutineID())
+	debug.PrintStack()
+
 	if db == nil {
 		panic("trie.New called without a database")
 	}
@@ -509,9 +517,22 @@ func (t *Trie) resolve(n node, prefix []byte) (node, error) {
 	return n, nil
 }
 
+//fixme: debug
+func GoroutineID() uint64 {
+	var buf [64]byte
+	b := buf[:runtime.Stack(buf[:], false)]
+	b = bytes.TrimPrefix(b, []byte("goroutine "))
+	b = b[:bytes.IndexByte(b, ' ')]
+	n, _ := strconv.ParseUint(string(b), 10, 64)
+	return n
+}
+
 func (t *Trie) resolveHash(n hashNode, prefix []byte) (node, error) {
 	hash := common.BytesToHash(n)
 	if node := t.db.node(hash); node != nil {
+		//fixme:debug
+		//get map address
+		fmt.Fprintf(os.Stderr, "usedNodeAddr_trieAddr: %p_%p, time: %s, goroutine: %d\n", &t.usedNode, t, time.Now(), GoroutineID())
 		t.usedNode[hash] = true
 		return node, nil
 	}
