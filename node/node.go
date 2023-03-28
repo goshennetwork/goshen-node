@@ -19,6 +19,7 @@ package node
 import (
 	"errors"
 	"fmt"
+	"github.com/ontology-layer-2/rollup-contracts/blob"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -69,9 +70,10 @@ type Node struct {
 }
 type RollupInfo struct {
 	//the all rollup db
-	RollupDb   schema.PersistStore
-	L1Client   *jsonrpc.Client
-	IsVerifier bool
+	RollupDb        schema.PersistStore
+	L1Client        *jsonrpc.Client
+	remoteOracleUrl string
+	IsVerifier      bool
 }
 
 const (
@@ -175,6 +177,7 @@ func New(conf *Config) (*Node, error) {
 		utils.Ensure(err)
 		node.RollupInfo.RollupDb = rollupDb
 		node.RollupInfo.IsVerifier = conf.RollupConfig.Verifier
+		node.RollupInfo.remoteOracleUrl = conf.RollupConfig.CliConfig.BlobOracle
 		//add rpc module
 		log.Info("open l2 http&ws module")
 		conf.HTTPModules = append(conf.HTTPModules, "l2")
@@ -207,7 +210,8 @@ func (n *Node) Start() error {
 		log.Info("register sync service")
 		l2client, err := jsonrpc.NewClient(n.config.RollupConfig.CliConfig.L2Rpc)
 		utils.Ensure(err)
-		syncService := sync_service.NewSyncService(n.RollupInfo.RollupDb, n.RollupInfo.L1Client, l2client, &n.config.RollupConfig.CliConfig)
+		blobOracle := blob.NewLocalOracle(n.RollupInfo.RollupDb, blob.NewRemoteOracle(n.RollupInfo.remoteOracleUrl))
+		syncService := sync_service.NewSyncService(n.RollupInfo.RollupDb, n.RollupInfo.L1Client, l2client, blobOracle, &n.config.RollupConfig.CliConfig)
 		n.lifecycles = append(n.lifecycles, syncService)
 	}
 	lifecycles := make([]Lifecycle, len(n.lifecycles))

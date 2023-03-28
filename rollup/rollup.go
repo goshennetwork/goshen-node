@@ -3,6 +3,7 @@ package rollup
 import (
 	"errors"
 	"fmt"
+	"github.com/ontology-layer-2/rollup-contracts/blob"
 	"sort"
 
 	"github.com/ethereum/go-ethereum/core"
@@ -31,16 +32,16 @@ type EthBackend interface {
 type RollupBackend struct {
 	EthBackend EthBackend
 	Store      *store.Storage
+	blobOracle blob.BlobOracle
 	//l1 client
 	L1Client   *jsonrpc.Client
 	IsVerifier bool
-
 	blockCache *lru.Cache
 }
 
 func NewBackend(ethBackend EthBackend, db schema.PersistStore, l1client *jsonrpc.Client, isVerifier bool) *RollupBackend {
 	cache, _ := lru.New(1024)
-	return &RollupBackend{ethBackend, store.NewStorage(db), l1client, isVerifier, cache}
+	return &RollupBackend{ethBackend, store.NewStorage(db), nil, l1client, isVerifier, cache}
 }
 
 func (self *RollupBackend) IsSynced() bool {
