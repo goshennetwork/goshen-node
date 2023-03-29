@@ -13,6 +13,7 @@ type MockSecureTrie struct {
 }
 
 func NewMockSecureTrie(trie state.Trie, addrHash common.Hash) *MockSecureTrie {
+	trie.EnableRecordUsedNodeKey()
 	result := &MockSecureTrie{Trie: trie,
 		AddrHash: addrHash,
 		ReadAddr: make(map[common.Address]struct{}, 0),

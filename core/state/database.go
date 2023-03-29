@@ -105,6 +105,8 @@ type Trie interface {
 	// with the node that proves the absence of the key.
 	Prove(key []byte, fromLevel uint, proofDb ethdb.KeyValueWriter) error
 
+	// only used for key proof of l2 system
+	EnableRecordUsedNodeKey()
 	GetUsedNodeKey() map[common.Hash]bool
 }
 

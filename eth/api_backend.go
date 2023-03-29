@@ -420,8 +420,6 @@ func (b *EthAPIBackend) ReadStorageProofAtBlock(ctx context.Context, blockNrOrHa
 	if err != nil {
 		return nil, err
 	}
-	//now need to enable used node record
-	statedb.EnableRecordUsedNodeKey()
 	_, _, _, err = b.eth.blockchain.Processor().Process(block, statedb, *b.eth.blockchain.GetVMConfig())
 	if err != nil {
 		return nil, fmt.Errorf("processing block %d failed: %v", block.NumberU64(), err)
