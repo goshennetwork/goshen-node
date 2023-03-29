@@ -67,6 +67,7 @@ type Trie struct {
 	// actually unhashed nodes
 	unhashed int
 
+	// usedNode is only used for L2 proof, is not safe for concurrent use.
 	usedNode map[common.Hash]bool
 }
 
@@ -86,8 +87,7 @@ func New(root common.Hash, db *Database) (*Trie, error) {
 		panic("trie.New called without a database")
 	}
 	trie := &Trie{
-		db:       db,
-		usedNode: make(map[common.Hash]bool, 0),
+		db: db,
 	}
 	if root != (common.Hash{}) && root != emptyRoot {
 		rootnode, err := trie.resolveHash(root[:], nil)
@@ -509,10 +509,18 @@ func (t *Trie) resolve(n node, prefix []byte) (node, error) {
 	return n, nil
 }
 
+func (t *Trie) EnableRecordUsedNodeKey() {
+	if t.usedNode == nil {
+		t.usedNode = make(map[common.Hash]bool)
+	}
+}
+
 func (t *Trie) resolveHash(n hashNode, prefix []byte) (node, error) {
 	hash := common.BytesToHash(n)
 	if node := t.db.node(hash); node != nil {
-		t.usedNode[hash] = true
+		if t.usedNode != nil {
+			t.usedNode[hash] = true
+		}
 		return node, nil
 	}
 	return nil, &MissingNodeError{NodeHash: hash, Path: prefix}

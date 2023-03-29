@@ -42,6 +42,10 @@ type SecureTrie struct {
 	secKeyCacheOwner *SecureTrie // Pointer to self, replace the key cache on mismatch
 }
 
+func (s *SecureTrie) EnableRecordUsedNodeKey() {
+	s.trie.EnableRecordUsedNodeKey()
+}
+
 // NewSecure creates a trie with an existing root node from a backing database
 // and optional intermediate in-memory node pool.
 //
