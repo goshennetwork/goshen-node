@@ -124,6 +124,16 @@ type StateDB struct {
 	StorageDeleted int
 }
 
+// EnableRecordUsedNodeKey enable record used node key function, because this method is only used for key proof
+// so the used situation is specified and check it.
+func (s *StateDB) EnableRecordUsedNodeKey() {
+	if t, ok := s.trie.(*trie.SecureTrie); !ok {
+		panic(1)
+	} else {
+		t.EnableRecordUsedNodeKey()
+	}
+}
+
 // New creates a new state from a given trie.
 func New(root common.Hash, db Database, snaps *snapshot.Tree) (*StateDB, error) {
 	tr, err := db.OpenTrie(root)
