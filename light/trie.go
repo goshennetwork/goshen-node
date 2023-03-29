@@ -183,6 +183,7 @@ func (t *odrTrie) do(key []byte, fn func() error) error {
 		}
 	}
 }
+func (t *odrTrie) EnableRecordUsedNodeKey() {}
 
 func (t *odrTrie) GetUsedNodeKey() map[common.Hash]bool {
 	return t.trie.GetUsedNodeKey()
