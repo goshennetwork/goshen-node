@@ -41,7 +41,7 @@ type RollupBackend struct {
 
 func NewBackend(ethBackend EthBackend, db schema.PersistStore, l1client *jsonrpc.Client, isVerifier bool) *RollupBackend {
 	cache, _ := lru.New(1024)
-	return &RollupBackend{ethBackend, store.NewStorage(db), nil, l1client, isVerifier, cache}
+	return &RollupBackend{ethBackend, store.NewStorage(db), blob.NewLocalOracle(db), l1client, isVerifier, cache}
 }
 
 func (self *RollupBackend) IsSynced() bool {

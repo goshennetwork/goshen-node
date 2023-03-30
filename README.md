@@ -27,7 +27,7 @@ npx hardhat node --network hardhat --hostname 0.0.0.0
 
 #fixme: maybe do not need to set etherbase, it's set by l2 consensus?
 # flowing has some implicit params, details see ./geth --help
-./geth --l2 --datadir chaindata/ --network 21772 --mine --miner.etherbase "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266" --verbosity=5 --gcmode archive --http --http.addr 0.0.0.0 --http.api "eth,net,web3,txpool" --http.port 23333 --ws --ws.addr 0.0.0.0 --syncmode full --snapshot=false --nat extip:xxx:xxx:xxx:xxx console
+./geth --l2 --datadir chaindata/ --networkid 21772 --mine --miner.etherbase "0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266" --verbosity=5 --gcmode archive --http --http.addr 0.0.0.0 --http.api "eth,net,web3,txpool" --http.port 23333 --ws --ws.addr 0.0.0.0 --syncmode full --snapshot=false --nat extip:xxx:xxx:xxx:xxx console
 
 # set up verifier node
 # verifier may add a trusted sequencer node to get newest block which is not uploaded to l1 yet.
