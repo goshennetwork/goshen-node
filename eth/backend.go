@@ -20,6 +20,7 @@ package eth
 import (
 	"errors"
 	"fmt"
+	"github.com/ontology-layer-2/rollup-contracts/blob"
 	"math/big"
 	"runtime"
 	"sync"
@@ -231,7 +232,11 @@ func New(stack *node.Node, config *ethconfig.Config) (*Ethereum, error) {
 		if stack.RollupInfo == nil {
 			panic("inconsistent")
 		}
-		eth.rollupBackend = rollup.NewBackend(eth, stack.RollupInfo.RollupDb, stack.RollupInfo.L1Client, stack.RollupInfo.IsVerifier)
+		var blobOracle blob.BlobOracle
+		if len(stack.Config().RollupConfig.CliConfig.BlobOracle) != 0 { //blob oracle is set, so node will record blob locally
+			blobOracle = blob.NewLocalOracle(stack.RollupInfo.RollupDb)
+		}
+		eth.rollupBackend = rollup.NewBackend(eth, stack.RollupInfo.RollupDb, blobOracle, stack.RollupInfo.L1Client, stack.RollupInfo.IsVerifier)
 	}
 	eth.miner = miner.New(eth, &config.Miner, chainConfig, eth.EventMux(), eth.engine, eth.isLocalBlock)
 	eth.miner.SetExtra(makeExtraData(config.Miner.ExtraData))

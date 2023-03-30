@@ -210,7 +210,10 @@ func (n *Node) Start() error {
 		log.Info("register sync service")
 		l2client, err := jsonrpc.NewClient(n.config.RollupConfig.CliConfig.L2Rpc)
 		utils.Ensure(err)
-		blobOracle := blob.NewLocalCachedOracle(n.RollupInfo.RollupDb, blob.NewRemoteOracle(n.RollupInfo.remoteOracleUrl))
+		var blobOracle blob.BlobOracle
+		if len(n.RollupInfo.remoteOracleUrl) != 0 { //if oracle is provided, setup blob oracle
+			blobOracle = blob.NewLocalCachedOracle(n.RollupInfo.RollupDb, blob.NewRemoteOracle(n.RollupInfo.remoteOracleUrl))
+		}
 		syncService := sync_service.NewSyncService(n.RollupInfo.RollupDb, n.RollupInfo.L1Client, l2client, blobOracle, &n.config.RollupConfig.CliConfig)
 		n.lifecycles = append(n.lifecycles, syncService)
 	}

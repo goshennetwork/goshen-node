@@ -39,9 +39,9 @@ type RollupBackend struct {
 	blockCache *lru.Cache
 }
 
-func NewBackend(ethBackend EthBackend, db schema.PersistStore, l1client *jsonrpc.Client, isVerifier bool) *RollupBackend {
+func NewBackend(ethBackend EthBackend, db schema.PersistStore, blobOracle blob.BlobOracle, l1client *jsonrpc.Client, isVerifier bool) *RollupBackend {
 	cache, _ := lru.New(1024)
-	return &RollupBackend{ethBackend, store.NewStorage(db), blob.NewLocalOracle(db), l1client, isVerifier, cache}
+	return &RollupBackend{ethBackend, store.NewStorage(db), blobOracle, l1client, isVerifier, cache}
 }
 
 func (self *RollupBackend) IsSynced() bool {
