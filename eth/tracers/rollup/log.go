@@ -11,9 +11,9 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/eth/tracers"
+	"github.com/goshennetwork/rollup-contracts/binding"
 	"github.com/laizy/web3"
 	"github.com/laizy/web3/registry"
-	"github.com/ontology-layer-2/rollup-contracts/binding"
 )
 
 func init() {

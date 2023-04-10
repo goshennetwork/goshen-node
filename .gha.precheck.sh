@@ -9,7 +9,7 @@ if [ $RUNNER_OS == 'Linux' ]; then
   env
   export GOPATH="/home/runner/go"
   #go test -v ./...
-  export GOPRIVATE=github.com/ontology-layer-2
+  export GOPRIVATE=github.com/goshennetwork
 
   go mod tidy
 

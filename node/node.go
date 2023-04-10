@@ -33,11 +33,11 @@ import (
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/p2p"
 	"github.com/ethereum/go-ethereum/rpc"
+	"github.com/goshennetwork/rollup-contracts/store/leveldbstore"
+	"github.com/goshennetwork/rollup-contracts/store/schema"
+	sync_service "github.com/goshennetwork/rollup-contracts/sync-service"
 	"github.com/laizy/web3/jsonrpc"
 	"github.com/laizy/web3/utils"
-	"github.com/ontology-layer-2/rollup-contracts/store/leveldbstore"
-	"github.com/ontology-layer-2/rollup-contracts/store/schema"
-	sync_service "github.com/ontology-layer-2/rollup-contracts/sync-service"
 	"github.com/prometheus/tsdb/fileutil"
 )
 

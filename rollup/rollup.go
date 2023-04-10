@@ -9,12 +9,12 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethdb"
 	"github.com/ethereum/go-ethereum/log"
+	"github.com/goshennetwork/rollup-contracts/binding"
+	"github.com/goshennetwork/rollup-contracts/store"
+	"github.com/goshennetwork/rollup-contracts/store/schema"
 	lru "github.com/hashicorp/golang-lru"
 	"github.com/laizy/web3"
 	"github.com/laizy/web3/jsonrpc"
-	"github.com/ontology-layer-2/rollup-contracts/binding"
-	"github.com/ontology-layer-2/rollup-contracts/store"
-	"github.com/ontology-layer-2/rollup-contracts/store/schema"
 )
 
 type TxsWithContext struct {

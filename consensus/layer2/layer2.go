@@ -15,8 +15,8 @@ import (
 	"github.com/ethereum/go-ethereum/params"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/ethereum/go-ethereum/trie"
-	"github.com/ontology-layer-2/rollup-contracts/store"
-	"github.com/ontology-layer-2/rollup-contracts/store/schema"
+	"github.com/goshennetwork/rollup-contracts/store"
+	"github.com/goshennetwork/rollup-contracts/store/schema"
 )
 
 type Layer2Instant struct {

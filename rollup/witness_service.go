@@ -12,10 +12,10 @@ import (
 	"github.com/ethereum/go-ethereum/core/state"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/params"
+	"github.com/goshennetwork/rollup-contracts/binding"
+	"github.com/goshennetwork/rollup-contracts/store/schema"
 	"github.com/laizy/log"
 	"github.com/laizy/web3/utils"
-	"github.com/ontology-layer-2/rollup-contracts/binding"
-	"github.com/ontology-layer-2/rollup-contracts/store/schema"
 )
 
 // CachedHeaderChain for l2 consensus engine prepare, only GetHeader wanted

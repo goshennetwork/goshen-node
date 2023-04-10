@@ -68,8 +68,7 @@ import (
 	"github.com/ethereum/go-ethereum/params"
 	"github.com/ethereum/go-ethereum/rollup"
 	pcsclite "github.com/gballet/go-libpcsclite"
-	"github.com/laizy/web3/utils"
-	"github.com/ontology-layer-2/rollup-contracts/config"
+	"github.com/goshennetwork/rollup-contracts/config"	"github.com/laizy/web3/utils"
 	gopsutil "github.com/shirou/gopsutil/mem"
 	"gopkg.in/urfave/cli.v1"
 )
