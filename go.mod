@@ -25,14 +25,15 @@ require (
 	github.com/go-stack/stack v1.8.1
 	github.com/golang/protobuf v1.5.0
 	github.com/golang/snappy v0.0.4
-	github.com/google/gofuzz v1.1.1-0.20200604201612-c04b05f3adfa
+	github.com/google/gofuzz v1.2.0
 	github.com/google/uuid v1.1.5
 	github.com/gorilla/websocket v1.4.2
+	github.com/goshennetwork/rollup-contracts v0.2.0
 	github.com/graph-gophers/graphql-go v1.2.1-0.20210916100229-446a2dd13dd5
 	github.com/hashicorp/go-bexpr v0.1.10
 	github.com/hashicorp/golang-lru v0.5.5-0.20210104140557-80c98217689d
 	github.com/holiman/bloomfilter/v2 v2.0.3
-	github.com/holiman/uint256 v1.2.0
+	github.com/holiman/uint256 v1.2.1
 	github.com/huin/goupnp v1.0.2
 	github.com/influxdata/influxdb v1.8.3
 	github.com/influxdata/influxdb-client-go/v2 v2.4.0
@@ -44,25 +45,24 @@ require (
 	github.com/klauspost/compress v1.4.1 // indirect
 	github.com/klauspost/cpuid v1.2.0 // indirect
 	github.com/laizy/log v0.1.0
-	github.com/laizy/web3 v0.1.14-0.20220810025812-d26ed23cbc67
+	github.com/laizy/web3 v0.1.14-0.20230221094440-1b8419578f57
 	github.com/mattn/go-colorable v0.1.12
 	github.com/mattn/go-isatty v0.0.14
 	github.com/naoina/toml v0.1.2-0.20170918210437-9fafd6967416
 	github.com/olekukonko/tablewriter v0.0.5
-	github.com/ontology-layer-2/rollup-contracts v0.1.1-0.20221118083510-996e93fafe98
 	github.com/peterh/liner v1.1.1-0.20190123174540-a2c9a5303de7
 	github.com/prometheus/tsdb v0.7.1
 	github.com/rjeczalik/notify v0.9.1
 	github.com/rs/cors v1.7.0
 	github.com/shirou/gopsutil v3.21.4-0.20210419000835-c7a38de76ee5+incompatible
 	github.com/status-im/keycard-go v0.0.0-20190316090335-8537d3370df4
-	github.com/stretchr/testify v1.7.0
+	github.com/stretchr/testify v1.7.2
 	github.com/syndtr/goleveldb v1.0.1-0.20210819022825-2ae1ddf74ef7
 	github.com/tyler-smith/go-bip39 v1.1.0
-	golang.org/x/crypto v0.0.0-20210415154028-4f45737414dc
-	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
-	golang.org/x/sys v0.0.0-20210927094055-39ccf1dd6fa6
-	golang.org/x/text v0.3.6
+	golang.org/x/crypto v0.7.0
+	golang.org/x/sync v0.1.0
+	golang.org/x/sys v0.6.0
+	golang.org/x/text v0.8.0
 	golang.org/x/time v0.0.0-20210220033141-f8bda1e9f3ba
 	gopkg.in/natefinch/npipe.v2 v2.0.0-20160621034901-c1b8fa8bdcce
 	gopkg.in/olebedev/go-duktape.v3 v3.0.0-20200619000410-60c24ae608a6

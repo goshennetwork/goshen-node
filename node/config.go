@@ -32,7 +32,7 @@ import (
 	"github.com/ethereum/go-ethereum/p2p"
 	"github.com/ethereum/go-ethereum/p2p/enode"
 	"github.com/ethereum/go-ethereum/rpc"
-	"github.com/ontology-layer-2/rollup-contracts/config"
+	"github.com/goshennetwork/rollup-contracts/config"
 )
 
 const (

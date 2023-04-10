@@ -1980,7 +1980,7 @@ func TestGolangBindings(t *testing.T) {
 
 	tidier := exec.Command(gocmd, "mod", "tidy")
 	tidier.Dir = pkg
-	tidier.Env = append(tidier.Env, "GOPRIVATE=github.com/ontology-layer-2")
+	tidier.Env = append(tidier.Env, "GOPRIVATE=github.com/goshennetwork")
 	tidier.Env = append(tidier.Env, "HOME=/home/runner")
 	if out, err := tidier.CombinedOutput(); err != nil {
 		t.Fatalf("failed to tidy Go module file: %v\n%s", err, out)

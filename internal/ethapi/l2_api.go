@@ -13,7 +13,7 @@ import (
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/rollup"
 	"github.com/ethereum/go-ethereum/rpc"
-	"github.com/ontology-layer-2/rollup-contracts/binding"
+	"github.com/goshennetwork/rollup-contracts/binding"
 )
 
 type L2Api struct {
