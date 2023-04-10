@@ -68,9 +68,9 @@ import (
 	"github.com/ethereum/go-ethereum/params"
 	"github.com/ethereum/go-ethereum/rollup"
 	pcsclite "github.com/gballet/go-libpcsclite"
-	"github.com/goshennetwork/rollup-contracts/config"
-	"github.com/laizy/web3/utils"
+	"github.com/goshennetwork/rollup-contracts/config"	"github.com/laizy/web3/utils"
 	gopsutil "github.com/shirou/gopsutil/mem"
+	"gopkg.in/urfave/cli.v1"
 )
 
 func init() {
