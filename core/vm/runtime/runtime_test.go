@@ -38,16 +38,6 @@ import (
 	"github.com/ethereum/go-ethereum/params"
 )
 
-func TestVV(t *testing.T) {
-	//595b58323d5a58fa4656
-	input := []byte{0x59, 0x5b, 0x58, 0x32, 0x3d, 0x5a, 0x58, 0xfa, 0x46, 0x56}
-	Execute(input, input, &Config{
-		GasLimit: 250000,
-		//GasLimit:  25000000,
-		EVMConfig: vm.Config{Debug: true, Tracer: vm.NewJSONLogger(nil, os.Stdout)},
-	})
-}
-
 func TestDefaults(t *testing.T) {
 	cfg := new(Config)
 	setDefaults(cfg)
