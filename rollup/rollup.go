@@ -3,7 +3,6 @@ package rollup
 import (
 	"errors"
 	"fmt"
-	"github.com/ontology-layer-2/rollup-contracts/blob"
 	"sort"
 
 	"github.com/ethereum/go-ethereum/core"
@@ -11,6 +10,7 @@ import (
 	"github.com/ethereum/go-ethereum/ethdb"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/goshennetwork/rollup-contracts/binding"
+	"github.com/goshennetwork/rollup-contracts/blob"
 	"github.com/goshennetwork/rollup-contracts/store"
 	"github.com/goshennetwork/rollup-contracts/store/schema"
 	lru "github.com/hashicorp/golang-lru"

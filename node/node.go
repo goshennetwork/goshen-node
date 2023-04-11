@@ -19,7 +19,6 @@ package node
 import (
 	"errors"
 	"fmt"
-	"github.com/ontology-layer-2/rollup-contracts/blob"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -34,6 +33,7 @@ import (
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/p2p"
 	"github.com/ethereum/go-ethereum/rpc"
+	"github.com/goshennetwork/rollup-contracts/blob"
 	"github.com/goshennetwork/rollup-contracts/store/leveldbstore"
 	"github.com/goshennetwork/rollup-contracts/store/schema"
 	sync_service "github.com/goshennetwork/rollup-contracts/sync-service"
