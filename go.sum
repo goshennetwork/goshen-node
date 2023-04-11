@@ -271,6 +271,8 @@ github.com/goshennetwork/rollup-contracts v0.1.1-0.20230403033031-ad720ab8348f h
 github.com/goshennetwork/rollup-contracts v0.1.1-0.20230403033031-ad720ab8348f/go.mod h1:pWT/L6aQQpXuPSwUk0op8uIV1ZHSnC1TXRJ+lJZ19Ic=
 github.com/goshennetwork/rollup-contracts v0.2.0 h1:GqWCFCux66gyT5ismPlYJwLZZeopeAxECGETL0A4ke4=
 github.com/goshennetwork/rollup-contracts v0.2.0/go.mod h1:pWT/L6aQQpXuPSwUk0op8uIV1ZHSnC1TXRJ+lJZ19Ic=
+github.com/goshennetwork/rollup-contracts v0.2.1-0.20230411094436-3436fe362435 h1:EiqW+MDpcDFXYeTspIfii4eS8kvXstLTJWOS56TLgTQ=
+github.com/goshennetwork/rollup-contracts v0.2.1-0.20230411094436-3436fe362435/go.mod h1:pWT/L6aQQpXuPSwUk0op8uIV1ZHSnC1TXRJ+lJZ19Ic=
 github.com/gotestyourself/gotestyourself v2.2.0+incompatible/go.mod h1:zZKM6oeNM8k+FRljX1mnzVYeS8wiGgQyvST1/GafPbY=
 github.com/graph-gophers/graphql-go v0.0.0-20201113091052-beb923fada29/go.mod h1:9CQHMSxwO4MprSdzoIEobiHpoLtHm77vfxsvsIN5Vuc=
 github.com/graph-gophers/graphql-go v1.2.1-0.20210916100229-446a2dd13dd5 h1:zTRjb32PNBDI2BhdpfcNm64ZxY+j+IevU7KhPYJFGk0=
