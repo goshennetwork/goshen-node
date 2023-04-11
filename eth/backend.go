@@ -20,7 +20,6 @@ package eth
 import (
 	"errors"
 	"fmt"
-	"github.com/ontology-layer-2/rollup-contracts/blob"
 	"math/big"
 	"runtime"
 	"sync"
@@ -58,6 +57,7 @@ import (
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/rollup"
 	"github.com/ethereum/go-ethereum/rpc"
+	"github.com/ontology-layer-2/rollup-contracts/blob"
 )
 
 // Config contains the configuration options of the ETH protocol.
