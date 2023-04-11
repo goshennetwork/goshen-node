@@ -228,12 +228,12 @@ func New(stack *node.Node, config *ethconfig.Config) (*Ethereum, error) {
 	}); err != nil {
 		return nil, err
 	}
-	if _, ok := eth.engine.(*layer2.Layer2Instant); ok { //if use l2 consensus, give it rollup backend
+	if _, ok := eth.engine.(*layer2.Layer2Instant); ok { // if use l2 consensus, give it rollup backend
 		if stack.RollupInfo == nil {
 			panic("inconsistent")
 		}
 		var blobOracle blob.BlobOracle
-		if len(stack.Config().RollupConfig.CliConfig.BlobOracle) != 0 { //blob oracle is set, so node will record blob locally
+		if len(stack.Config().RollupConfig.CliConfig.BlobOracle) != 0 { // blob oracle is set, so node will record blob locally
 			blobOracle = blob.NewLocalOracle(stack.RollupInfo.RollupDb)
 		}
 		eth.rollupBackend = rollup.NewBackend(eth, stack.RollupInfo.RollupDb, blobOracle, stack.RollupInfo.L1Client, stack.RollupInfo.IsVerifier)
