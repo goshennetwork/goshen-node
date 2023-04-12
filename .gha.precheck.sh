@@ -18,5 +18,5 @@ if [ $RUNNER_OS == 'Linux' ]; then
   make geth
 
   #quit when meet first fail test
-  for s in $(go list ./...); do if go test -failfast -v -p 1 $s; then break; fi; done
+  for s in $(go list ./...); do if ! go test -failfast -v -p 1 $s; then break; fi; done
   fi
