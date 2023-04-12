@@ -21,16 +21,14 @@ type L2Api struct {
 }
 
 func Apis(backend *rollup.RollupBackend) []rpc.API {
-	return append(UtilsApis(backend),
-		[]rpc.API{
-			{
-				Namespace: "l2",
-				Version:   "1.0",
-				Service:   newL2Api(backend),
-				Public:    true,
-			},
-		}...,
-	)
+	return []rpc.API{
+		{
+			Namespace: "l2",
+			Version:   "1.0",
+			Service:   newL2Api(backend),
+			Public:    true,
+		},
+	}
 }
 
 func newL2Api(rollupBackend *rollup.RollupBackend) *L2Api {
