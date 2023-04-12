@@ -20,10 +20,12 @@ package jsre
 import (
 	crand "crypto/rand"
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"math/rand"
+	"os"
 	"time"
 
 	"github.com/dop251/goja"
@@ -79,6 +81,22 @@ func New(assetPath string, output io.Writer) *JSRE {
 	go re.runEventLoop()
 	re.Set("loadScript", MakeCallback(re.vm, re.loadScript))
 	re.Set("inspect", re.prettyPrintJS)
+	saveFile := func(call Call) (goja.Value, error) {
+		content := call.Argument(0).ToString().String()
+		file := call.Argument(1).ToString().String()
+		file = common.AbsolutePath(re.assetPath, file)
+		if _, err := os.Stat(file); !errors.Is(err, os.ErrNotExist) {
+			return nil, errors.New("duplicated file exist")
+		}
+		err := ioutil.WriteFile(file, []byte(content), os.ModePerm)
+		if err != nil {
+			return nil, err
+		}
+		return goja.Undefined(), nil
+	}
+
+	re.Set("saveFile", MakeCallback(re.vm, saveFile))
+
 	return re
 }
 
