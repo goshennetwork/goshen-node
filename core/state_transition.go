@@ -317,7 +317,7 @@ func (st *StateTransition) TransitionDb() (*ExecutionResult, error) {
 	if st.gas < gas {
 		return nil, fmt.Errorf("%w: have %d, want %d", ErrIntrinsicGas, st.gas, gas)
 	}
-	if st.gas-gas > consts.MaxTxExecGas {
+	if st.gas-gas > consts.MaxTxExecGas && st.evm.ChainConfig().Layer2Instant != nil {
 		return nil, fmt.Errorf("%w: have %d, max %d", ErrExecGasTooHigh, st.gas-gas, consts.MaxTxExecGas)
 	}
 	st.gas -= gas
