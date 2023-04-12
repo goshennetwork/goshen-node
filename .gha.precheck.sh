@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+set -o xtrace
+set -o errexit
 set -ex
 
 VERSION=$(git describe --always --tags --long)
