@@ -617,7 +617,7 @@ func (pool *TxPool) validateTx(tx *types.Transaction, local bool) error {
 			Eip1559:  pool.eip1559,
 			Eip2718:  pool.eip2718,
 		}
-		return ValidateTx(tx, pool.currentState, pool.signer, cfg, pool.chainconfig.Layer2Instant != nil)
+		return ValidateTx(tx, pool.currentState, pool.signer, cfg, local, pool.chainconfig.Layer2Instant != nil)
 	}
 
 	if pool.GasPriceOracle == nil {
@@ -643,7 +643,7 @@ func (pool *TxPool) validateTx(tx *types.Transaction, local bool) error {
 		Eip1559:  pool.eip1559,
 		Eip2718:  pool.eip2718,
 	}
-	return ValidateTx(tx, pool.currentState, pool.signer, cfg, pool.chainconfig.Layer2Instant != nil)
+	return ValidateTx(tx, pool.currentState, pool.signer, cfg, local, pool.chainconfig.Layer2Instant != nil)
 
 }
 

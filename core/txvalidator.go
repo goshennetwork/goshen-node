@@ -18,7 +18,7 @@ type ValidDataTxConfig struct {
 	Eip1559  bool // Fork indicator whether we are using EIP-1559 type transactions.
 }
 
-func ValidateTx(tx *types.Transaction, statedb *state.StateDB, signer types.Signer, cfg ValidDataTxConfig, l2Mod bool) error {
+func ValidateTx(tx *types.Transaction, statedb *state.StateDB, signer types.Signer, cfg ValidDataTxConfig, isLocal bool, l2Mod bool) error {
 	if l2Mod { //l2 tx pool do not accept L1CrossLayer signature message,because of hard coded
 		//in l1, here use the same is fine, maybe set it in chainConfig?
 		if tx.Protected() == false {
@@ -73,7 +73,7 @@ func ValidateTx(tx *types.Transaction, statedb *state.StateDB, signer types.Sign
 		return ErrInvalidSender
 	}
 	// Drop non-local transactions under our own minimal accepted gas price or tip.
-	if tx.EffectiveGasTipIntCmp(cfg.GasPrice, cfg.BaseFee) < 0 {
+	if !isLocal && tx.EffectiveGasTipIntCmp(cfg.GasPrice, cfg.BaseFee) < 0 {
 		return ErrUnderpriced
 	}
 	// Ensure the transaction adheres to nonce ordering
