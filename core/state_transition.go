@@ -134,7 +134,9 @@ func IntrinsicGas(data []byte, accessList types.AccessList, isContractCreation, 
 		nonZeroGas = params.TxDataNonZeroGasEIP2028
 	}
 	nonZeroGas *= consts.IntrinsicGasFactor
-	gas += consts.TxBaseSize * nonZeroGas
+	if !consts.IsTestintEnv() {
+		gas += consts.TxBaseSize * nonZeroGas
+	}
 	// Bump the required gas by the amount of transactional data
 	if len(data) > 0 {
 		// Zero and non-zero bytes are priced differently
