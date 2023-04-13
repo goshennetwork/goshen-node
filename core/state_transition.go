@@ -133,11 +133,11 @@ func IntrinsicGas(data []byte, accessList types.AccessList, isContractCreation, 
 	if isEIP2028 {
 		nonZeroGas = params.TxDataNonZeroGasEIP2028
 	}
-	gasFactor := consts.IntrinsicGasFactor
+	gasFactor := uint64(1)
 	if isL2 {
-		// we want L2 gas price 1% of L1, except intrinsic gas
-		gasFactor = 100
-		nonZeroGas *= consts.IntrinsicGasFactor
+		gasFactor = consts.IntrinsicGasFactor
+		nonZeroGas *= gasFactor
+		// l2 should calc the gas of uploading tx size
 		gas += consts.TxBaseSize * nonZeroGas
 	}
 
