@@ -35,7 +35,7 @@ var L1CrossLayerWitnessSender = common.HexToAddress("0x7E5F4552091A69125d5DfCb7b
 var FeeCollector = common.HexToAddress("0xfee0000000000000000000000000000000000fee")
 
 var IntrinsicGasFactor = func() uint64 {
-	if inTestEnv() {
+	if IsTestintEnv() {
 		return 1
 	}
 
@@ -44,13 +44,13 @@ var IntrinsicGasFactor = func() uint64 {
 
 // limit the execution gas: tx.Gas - tx.IntrinsicGas
 var MaxTxExecGas = func() uint64 {
-	if inTestEnv() {
+	if IsTestintEnv() {
 		return math.MaxUint64
 	}
 
 	return 20000000
 }()
 
-func inTestEnv() bool {
+func IsTestintEnv() bool {
 	return flag.Lookup("test.v") != nil || strings.Contains(os.Args[0], "test")
 }
