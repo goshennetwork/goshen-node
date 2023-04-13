@@ -905,7 +905,7 @@ func DoCall(ctx context.Context, b Backend, args TransactionArgs, blockNrOrHash 
 	defer cancel()
 
 	// Get a new instance of the EVM.
-	msg, err := args.ToMessage(globalGasCap, header.BaseFee)
+	msg, err := args.ToMessage(globalGasCap, header.BaseFee, b.ChainConfig().IsL2())
 	if err != nil {
 		return nil, err
 	}
@@ -1008,7 +1008,7 @@ func DoEstimateGas(ctx context.Context, b Backend, args TransactionArgs, blockNr
 		if block == nil {
 			return 0, errors.New("block not found")
 		}
-		intrinsic, err := args.IntrinsicGas()
+		intrinsic, err := args.IntrinsicGas(b.ChainConfig().IsL2())
 		if err != nil {
 			return 0, err
 		}
@@ -1461,7 +1461,7 @@ func AccessList(ctx context.Context, b Backend, blockNrOrHash rpc.BlockNumberOrH
 		statedb := db.Copy()
 		// Set the accesslist to the last al
 		args.AccessList = &accessList
-		msg, err := args.ToMessage(b.RPCGasCap(), header.BaseFee)
+		msg, err := args.ToMessage(b.RPCGasCap(), header.BaseFee, b.ChainConfig().IsL2())
 		if err != nil {
 			return nil, 0, nil, err
 		}

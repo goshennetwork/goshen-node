@@ -86,7 +86,7 @@ func ValidateTx(tx *types.Transaction, statedb *state.StateDB, signer types.Sign
 		return ErrInsufficientFunds
 	}
 	// Ensure the transaction has more gas than the basic tx fee.
-	intrGas, err := IntrinsicGas(tx.Data(), tx.AccessList(), tx.To() == nil, true, cfg.Istanbul, tx.IsQueue())
+	intrGas, err := IntrinsicGas(tx.Data(), tx.AccessList(), tx.To() == nil, true, cfg.Istanbul, l2Mod, tx.IsQueue())
 	if err != nil {
 		return err
 	}

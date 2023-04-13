@@ -117,7 +117,7 @@ func (result *ExecutionResult) Revert() []byte {
 }
 
 // IntrinsicGas computes the 'intrinsic gas' for a message with the given data.
-func IntrinsicGas(data []byte, accessList types.AccessList, isContractCreation, isHomestead, isEIP2028, isEnqueue bool) (uint64, error) {
+func IntrinsicGas(data []byte, accessList types.AccessList, isContractCreation, isHomestead, isEIP2028, isL2, isEnqueue bool) (uint64, error) {
 	if isEnqueue {
 		return 0, nil
 	}
@@ -133,8 +133,14 @@ func IntrinsicGas(data []byte, accessList types.AccessList, isContractCreation, 
 	if isEIP2028 {
 		nonZeroGas = params.TxDataNonZeroGasEIP2028
 	}
-	nonZeroGas *= consts.IntrinsicGasFactor
-	gas += consts.TxBaseSize * nonZeroGas
+	gasFactor := consts.IntrinsicGasFactor
+	if isL2 {
+		// we want L2 gas price 1% of L1, except intrinsic gas
+		gasFactor = 100
+		nonZeroGas *= consts.IntrinsicGasFactor
+		gas += consts.TxBaseSize * nonZeroGas
+	}
+
 	// Bump the required gas by the amount of transactional data
 	if len(data) > 0 {
 		// Zero and non-zero bytes are priced differently
@@ -150,15 +156,15 @@ func IntrinsicGas(data []byte, accessList types.AccessList, isContractCreation, 
 		gas += nz * nonZeroGas
 
 		z := uint64(len(data)) - nz
-		zeroGas := params.TxDataZeroGas * consts.IntrinsicGasFactor
+		zeroGas := params.TxDataZeroGas * gasFactor
 		if (math.MaxUint64-gas)/zeroGas < z {
 			return 0, ErrGasUintOverflow
 		}
 		gas += z * zeroGas
 	}
 	if accessList != nil {
-		gas += uint64(len(accessList)) * params.TxAccessListAddressGas * consts.IntrinsicGasFactor
-		gas += uint64(accessList.StorageKeys()) * params.TxAccessListStorageKeyGas * consts.IntrinsicGasFactor
+		gas += uint64(len(accessList)) * params.TxAccessListAddressGas * gasFactor
+		gas += uint64(accessList.StorageKeys()) * params.TxAccessListStorageKeyGas * gasFactor
 	}
 	return gas, nil
 }
@@ -306,11 +312,12 @@ func (st *StateTransition) TransitionDb() (*ExecutionResult, error) {
 	homestead := st.evm.ChainConfig().IsHomestead(st.evm.Context.BlockNumber)
 	istanbul := st.evm.ChainConfig().IsIstanbul(st.evm.Context.BlockNumber)
 	london := st.evm.ChainConfig().IsLondon(st.evm.Context.BlockNumber)
+	isl2 := st.evm.ChainConfig().IsL2()
 	contractCreation := msg.To() == nil
 
 	// Check clauses 4-5, subtract intrinsic gas if everything is correct
 	isQeueue := msg.Nonce() >= consts.InitialEnqueueTxNonce
-	gas, err := IntrinsicGas(st.data, st.msg.AccessList(), contractCreation, homestead, istanbul, isQeueue)
+	gas, err := IntrinsicGas(st.data, st.msg.AccessList(), contractCreation, homestead, istanbul, isl2, isQeueue)
 	if err != nil {
 		return nil, err
 	}

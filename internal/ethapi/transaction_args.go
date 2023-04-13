@@ -174,29 +174,29 @@ func (args *TransactionArgs) setDefaults(ctx context.Context, b Backend) error {
 	return nil
 }
 
-func (args *TransactionArgs) IntrinsicGas() (uint64, error) {
+func (args *TransactionArgs) IntrinsicGas(isl2 bool) (uint64, error) {
 	var accessList types.AccessList
 	if args.AccessList != nil {
 		accessList = *args.AccessList
 	}
-	return core.IntrinsicGas(args.data(), accessList, args.To == nil, true, true, false)
+	return core.IntrinsicGas(args.data(), accessList, args.To == nil, true, true, isl2, false)
 }
 
 // ToMessage converts the transaction arguments to the Message type used by the
 // core evm. This method is used in calls and traces that do not require a real
 // live transaction.
-func (args *TransactionArgs) ToMessage(globalGasCap uint64, baseFee *big.Int) (types.Message, error) {
+func (args *TransactionArgs) ToMessage(globalGasCap uint64, baseFee *big.Int, isL2 bool) (types.Message, error) {
 	// Reject invalid combinations of pre- and post-1559 fee styles
 	if args.GasPrice != nil && (args.MaxFeePerGas != nil || args.MaxPriorityFeePerGas != nil) {
 		return types.Message{}, errors.New("both gasPrice and (maxFeePerGas or maxPriorityFeePerGas) specified")
 	}
 	// Set sender address or use zero address if none specified.
 	addr := args.from()
-	intrins, err := args.IntrinsicGas()
+	intrins, err := args.IntrinsicGas(isL2)
 	if err != nil {
 		return types.Message{}, err
 	}
-	if globalGasCap > intrins+consts.MaxTxExecGas {
+	if globalGasCap > intrins+consts.MaxTxExecGas && isL2 {
 		globalGasCap = intrins + consts.MaxTxExecGas
 	}
 

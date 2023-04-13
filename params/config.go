@@ -418,6 +418,10 @@ func (c *ChainConfig) String() string {
 	)
 }
 
+func (c *ChainConfig) IsL2() bool {
+	return c.Layer2Instant != nil
+}
+
 // IsHomestead returns whether num is either equal to the homestead block or greater.
 func (c *ChainConfig) IsHomestead(num *big.Int) bool {
 	return isForked(c.HomesteadBlock, num)
