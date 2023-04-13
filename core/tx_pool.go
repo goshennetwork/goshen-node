@@ -175,7 +175,12 @@ var DefaultTxPoolConfig = TxPoolConfig{
 	Rejournal: time.Hour,
 
 	PriceLimit: 1,
-	PriceBump:  1, // l2 default price bump is 1
+	PriceBump: func() uint64 {
+		if consts.IsTestintEnv() {
+			return 10
+		}
+		return 1
+	}(), // l2 default price bump is 1
 
 	AccountSlots: 16,
 	GlobalSlots:  4096 + 1024, // urgent + floating queue capacity with 4:1 ratio
