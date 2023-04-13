@@ -19,6 +19,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/ethereum/go-ethereum/common/consts"
 	"os"
 	"sort"
 	"strconv"
@@ -275,6 +276,10 @@ func main() {
 func prepare(ctx *cli.Context) {
 	// If we're running a known preset, log it for convenience.
 	switch {
+	case ctx.GlobalIsSet(utils.RollupEnableFlag.Name):
+		log.Info("Start L2 mode...")
+		log.Info("Changing gas factory to 100")
+		consts.IntrinsicGasFactor = 100
 	case ctx.GlobalIsSet(utils.RopstenFlag.Name):
 		log.Info("Starting Geth on Ropsten testnet...")
 
