@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/consts"
 	"github.com/ethereum/go-ethereum/consensus/layer2"
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -191,6 +192,10 @@ var eth66 = map[uint64]msgHandler{
 
 func hook(fn func(backend Backend, msg Decoder, peer *Peer) error) func(backend Backend, msg Decoder, peer *Peer) error {
 	return func(backend Backend, msg Decoder, peer *Peer) error {
+		if consts.IsTestintEnv() {
+			return fn(backend, msg, peer)
+		}
+
 		if l2, ok := backend.Chain().Engine().(*layer2.Layer2Instant); ok {
 			if !peer.Info().Network.Trusted || !l2.IsVerifier { // verifier do not accept untrusted wired info,sequencer do not accept wired info
 				return nil
