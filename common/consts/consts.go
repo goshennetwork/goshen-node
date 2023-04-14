@@ -45,7 +45,7 @@ var IntrinsicGasFactor = func() uint64 {
 // limit the execution gas: tx.Gas - tx.IntrinsicGas
 var MaxTxExecGas = func() uint64 {
 	if IsTestintEnv() {
-		return math.MaxUint64
+		return math.MaxUint32
 	}
 
 	return 20000000
