@@ -1013,7 +1013,7 @@ func DoEstimateGas(ctx context.Context, b Backend, args TransactionArgs, blockNr
 			return 0, err
 		}
 		sum := intrinsic + consts.MaxTxExecGas
-		if sum > intrinsic { // overflow,keep normal
+		if sum < intrinsic { // overflow,keep normal
 			sum = hi
 		}
 		hi = sum
