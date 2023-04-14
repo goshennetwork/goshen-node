@@ -169,7 +169,7 @@ func New(conf *Config) (*Node, error) {
 		//if not empty, try to set up rollup store
 		node.RollupInfo.L1Client, err = jsonrpc.NewClient(rollupConf.CliConfig.L1Rpc)
 		if err != nil {
-			return nil, fmt.Errorf("connect l1 client failed, err: ", err)
+			return nil, fmt.Errorf("connect l1 client failed, err: %w", err)
 		}
 		rollupDb, err := leveldbstore.NewLevelDBStore(rollupConf.DbDir)
 		utils.Ensure(err)
