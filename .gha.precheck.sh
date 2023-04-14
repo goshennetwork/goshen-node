@@ -9,6 +9,7 @@ if [ $RUNNER_OS == 'Linux' ]; then
   echo "linux sys"
   env
   export GOPATH="/home/runner/go"
+  export PATH=$PATH:$GOPATH/bin
   #go test -v ./...
   export GOPRIVATE=github.com/goshennetwork
 
