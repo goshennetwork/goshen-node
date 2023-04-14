@@ -134,7 +134,7 @@ func IntrinsicGas(data []byte, accessList types.AccessList, isContractCreation, 
 		nonZeroGas = params.TxDataNonZeroGasEIP2028
 	}
 	nonZeroGas *= consts.IntrinsicGasFactor
-	if !consts.IsTestintEnv() {
+	if !consts.IsTestingEnv() { // in dev mode
 		gas += consts.TxBaseSize * nonZeroGas
 	}
 	// Bump the required gas by the amount of transactional data
@@ -319,9 +319,7 @@ func (st *StateTransition) TransitionDb() (*ExecutionResult, error) {
 	if st.gas < gas {
 		return nil, fmt.Errorf("%w: have %d, want %d", ErrIntrinsicGas, st.gas, gas)
 	}
-	switch consts.IsTestintEnv() {
-	case true: // in test ignore
-	default: // in dev mod, check exec gas
+	if !consts.IsTestingEnv() { // in dev mod, check exec gas
 		if st.gas-gas > consts.MaxTxExecGas {
 			return nil, fmt.Errorf("%w: have %d, max %d, factor: %d", ErrExecGasTooHigh, st.gas-gas, consts.MaxTxExecGas, consts.IntrinsicGasFactor)
 		}

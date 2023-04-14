@@ -192,7 +192,7 @@ var eth66 = map[uint64]msgHandler{
 
 func hook(fn func(backend Backend, msg Decoder, peer *Peer) error) func(backend Backend, msg Decoder, peer *Peer) error {
 	return func(backend Backend, msg Decoder, peer *Peer) error {
-		if consts.IsTestintEnv() {
+		if consts.IsTestingEnv() {
 			return fn(backend, msg, peer)
 		}
 

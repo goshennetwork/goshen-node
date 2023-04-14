@@ -176,7 +176,7 @@ var DefaultTxPoolConfig = TxPoolConfig{
 
 	PriceLimit: 1,
 	PriceBump: func() uint64 {
-		if consts.IsTestintEnv() {
+		if consts.IsTestingEnv() {
 			return 10
 		}
 		return 1
@@ -608,7 +608,7 @@ func (pool *TxPool) local() map[common.Address]types.Transactions {
 // validateTx checks whether a transaction is valid according to the consensus
 // rules and adheres to some heuristic limits of the local node (price and size).
 func (pool *TxPool) validateTx(tx *types.Transaction, local bool) error {
-	if consts.IsTestintEnv() { //test no need l2 gasprice oracle
+	if consts.IsTestingEnv() { //test no need l2 gasprice oracle
 		cfg := ValidDataTxConfig{
 			MaxGas:   pool.currentMaxGas,
 			GasPrice: pool.gasPrice,
