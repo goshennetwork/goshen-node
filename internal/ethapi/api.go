@@ -1008,6 +1008,7 @@ func DoEstimateGas(ctx context.Context, b Backend, args TransactionArgs, blockNr
 		if block == nil {
 			return 0, errors.New("block not found")
 		}
+		hi = block.GasLimit()
 		intrinsic, err := args.IntrinsicGas()
 		if err != nil {
 			return 0, err
