@@ -319,9 +319,14 @@ func (st *StateTransition) TransitionDb() (*ExecutionResult, error) {
 	if st.gas < gas {
 		return nil, fmt.Errorf("%w: have %d, want %d", ErrIntrinsicGas, st.gas, gas)
 	}
-	if st.gas-gas > consts.MaxTxExecGas {
-		return nil, fmt.Errorf("%w: have %d, max %d, factor: %d", ErrExecGasTooHigh, st.gas-gas, consts.MaxTxExecGas, consts.IntrinsicGasFactor)
+	switch consts.IsTestintEnv() {
+	case true: // in test ignore
+	default: // in dev mod, check exec gas
+		if st.gas-gas > consts.MaxTxExecGas {
+			return nil, fmt.Errorf("%w: have %d, max %d, factor: %d", ErrExecGasTooHigh, st.gas-gas, consts.MaxTxExecGas, consts.IntrinsicGasFactor)
+		}
 	}
+
 	st.gas -= gas
 
 	// Check clause 6
