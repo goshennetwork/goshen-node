@@ -23,4 +23,4 @@ if [ $RUNNER_OS == 'Linux' ]; then
 
   #quit when meet first fail test
   #for s in $(go list ./...); do if ! go test -failfast -v -p 1 $s; then exit 1; fi; done
-  #fi
+  fi
