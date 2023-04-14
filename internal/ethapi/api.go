@@ -1012,7 +1012,11 @@ func DoEstimateGas(ctx context.Context, b Backend, args TransactionArgs, blockNr
 		if err != nil {
 			return 0, err
 		}
-		hi = intrinsic + consts.MaxTxExecGas
+		sum := intrinsic + consts.MaxTxExecGas
+		if sum > intrinsic { // overflow,keep normal
+			sum = hi
+		}
+		hi = sum
 	}
 	// Normalize the max fee per gas the call is willing to spend.
 	var feeCap *big.Int
