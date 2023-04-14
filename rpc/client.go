@@ -494,6 +494,10 @@ func (c *Client) newMessage(method string, paramsIn ...interface{}) (*jsonrpcMes
 // send registers op with the dispatch loop, then sends msg on the connection.
 // if sending fails, op is deregistered.
 func (c *Client) send(ctx context.Context, op *requestOp, msg interface{}) error {
+	// check early to make test happy
+	if err := ctx.Err(); err != nil {
+		return err
+	}
 	select {
 	case c.reqInit <- op:
 		err := c.write(ctx, msg, false)
