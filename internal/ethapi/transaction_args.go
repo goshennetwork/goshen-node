@@ -196,8 +196,15 @@ func (args *TransactionArgs) ToMessage(globalGasCap uint64, baseFee *big.Int) (t
 	if err != nil {
 		return types.Message{}, err
 	}
-	if globalGasCap > intrins+consts.MaxTxExecGas {
-		globalGasCap = intrins + consts.MaxTxExecGas
+
+	sum := intrins + consts.MaxTxExecGas
+	// check overflow
+	if sum < intrins {
+		// overflow,just use global gas cap
+		sum = globalGasCap
+	}
+	if globalGasCap > sum {
+		globalGasCap = sum
 	}
 
 	// Set default gas & gas price if none were set
