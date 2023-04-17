@@ -156,6 +156,8 @@ public class AndroidTest extends InstrumentationTestCase {
 // This method has been adapted from golang.org/x/mobile/bind/java/seq_test.go/runTest
 func TestAndroid(t *testing.T) {
 	// Skip tests on Windows altogether
+	t.Skip("goshen: no need to support Android")
+
 	if runtime.GOOS == "windows" {
 		t.Skip("cannot test Android bindings on Windows, skipping")
 	}

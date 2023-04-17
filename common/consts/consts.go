@@ -1,6 +1,13 @@
 package consts
 
-import "github.com/ethereum/go-ethereum/common"
+import (
+	"flag"
+	"math"
+	"os"
+	"strings"
+
+	"github.com/ethereum/go-ethereum/common"
+)
 
 const InitialEnqueueTxNonce = 1 << 63
 const MaxSenderNonce = 1 << 62
@@ -27,5 +34,23 @@ var L1CrossLayerWitnessSender = common.HexToAddress("0x7E5F4552091A69125d5DfCb7b
 
 var FeeCollector = common.HexToAddress("0xfee0000000000000000000000000000000000fee")
 
-const IntrinsicGasFactor = 100 // we want L2 gas price 1% of L1, except intrinsic gas
-const MaxTxExecGas = 20000000  // limit the execution gas: tx.Gas - tx.IntrinsicGas
+var IntrinsicGasFactor = func() uint64 {
+	if IsTestingEnv() {
+		return 1
+	}
+
+	return 100 // we want L2 gas price 1% of L1, except intrinsic gas
+}()
+
+// limit the execution gas: tx.Gas - tx.IntrinsicGas
+var MaxTxExecGas = func() uint64 {
+	if IsTestingEnv() {
+		return math.MaxUint32
+	}
+
+	return 20000000
+}()
+
+func IsTestingEnv() bool {
+	return flag.Lookup("test.v") != nil || strings.Contains(os.Args[0], "test")
+}

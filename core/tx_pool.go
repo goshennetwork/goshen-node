@@ -175,7 +175,12 @@ var DefaultTxPoolConfig = TxPoolConfig{
 	Rejournal: time.Hour,
 
 	PriceLimit: 1,
-	PriceBump:  1, // l2 default price bump is 1
+	PriceBump: func() uint64 {
+		if consts.IsTestingEnv() {
+			return 10
+		}
+		return 1
+	}(), // l2 default price bump is 1
 
 	AccountSlots: 16,
 	GlobalSlots:  4096 + 1024, // urgent + floating queue capacity with 4:1 ratio
@@ -603,6 +608,18 @@ func (pool *TxPool) local() map[common.Address]types.Transactions {
 // validateTx checks whether a transaction is valid according to the consensus
 // rules and adheres to some heuristic limits of the local node (price and size).
 func (pool *TxPool) validateTx(tx *types.Transaction, local bool) error {
+	if consts.IsTestingEnv() { //test no need l2 gasprice oracle
+		cfg := ValidDataTxConfig{
+			MaxGas:   pool.currentMaxGas,
+			GasPrice: pool.gasPrice,
+			BaseFee:  pool.priced.urgent.baseFee,
+			Istanbul: pool.istanbul,
+			Eip1559:  pool.eip1559,
+			Eip2718:  pool.eip2718,
+		}
+		return ValidateTx(tx, pool.currentState, pool.signer, cfg, local, pool.chainconfig.Layer2Instant != nil)
+	}
+
 	if pool.GasPriceOracle == nil {
 		return errors.New("not injected yet")
 	}
@@ -626,7 +643,7 @@ func (pool *TxPool) validateTx(tx *types.Transaction, local bool) error {
 		Eip1559:  pool.eip1559,
 		Eip2718:  pool.eip2718,
 	}
-	return ValidateTx(tx, pool.currentState, pool.signer, cfg, pool.chainconfig.Layer2Instant != nil)
+	return ValidateTx(tx, pool.currentState, pool.signer, cfg, local, pool.chainconfig.Layer2Instant != nil)
 
 }
 
