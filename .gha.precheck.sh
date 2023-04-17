@@ -17,7 +17,7 @@ if [ $RUNNER_OS == 'Linux' ]; then
 
   bash ./.gha.gofmt.sh
 
-  make geth
+  make all
 
   go run build/ci.go test -dlgo
 
