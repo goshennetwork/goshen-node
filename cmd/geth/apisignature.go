@@ -40,128 +40,54 @@ func injectApiSignature(c *console.Console) {
 				}
 			}
 
-			if (web3) {
-				if (web3.sha3) {
-					web3.sha3.toString = function() { return "function (data: bytes)" }
-				}
-				
-			}
 
 			if (eth) {
-				if (eth.getBalance) {
-					eth.getBalance.toString = function() { return "function (address: bytes20, blockNumber: uint or latest earliest pending)" }
-				}
-				if (eth.getStorageAt) {
-					eth.getStorageAt.toString = function() { return "function (storageAddress: bytes20, storagePos: uint, blockNumber: uint or latest earliest pending)" }
-				}
-				if (eth.getTransactionCount) {
-					eth.getTransactionCount.toString = function() { return "function (address: bytes20, blockNumber: uint or latest earliest pending)" }
-				}
-				if (eth.getBlockTransactionCount) {
-					eth.getBlockTransactionCount.toString = function() { return "function (args: string[])" }
-				}
-				if (eth.getCode) {
-					eth.getCode.toString = function() { return "function (address: bytes20, blockNumber: uint or latest earliest pending)" }
-				}
-				if (eth.sign) {
-					eth.sign.toString = function() { return "function (address: bytes20, data: bytes)" }
-				}
-				if (eth.signTransaction) {
-					eth.signTransaction.toString = function() { return "function (transaction: object(from: bytes20, to: bytes20, gas: uint, gasPrice: uint, value: uint, data: bytes, nonce: uint))" }
-				}
-				if (eth.sendTransaction) {
-					eth.sendTransaction.toString = function() { return "function (transaction: object(from: bytes20, to: bytes20, gas: uint, gasPrice: uint, value: uint, data: bytes, nonce: uint))" }
-				}
-				if (eth.sendRawTransaction) {
-					eth.sendRawTransaction.toString = function() { return "function (signedTransactionData: bytes)" }
-				}
-				if (eth.call) {
-					eth.call.toString = function() { return "function ((transaction: object(from: bytes20, to: bytes20, gas: uint, gasPrice: uint, value: uint, data: bytes, nonce: uint), blockNumber: uint or latest earliest pending)" }
-				}
-				if (eth.estimateGas) {
-					eth.estimateGas.toString = function() { return "function (transaction: object(from: bytes20, to: bytes20, gas: uint, gasPrice: uint, value: uint, data: bytes, nonce: uint), blockNumber: uint or latest earliest pending)" }
-				}
-				if (eth.getBlockByHash) {
-					eth.getBlockByHash.toString = function() { return "function (blockHash: bytes32, isFullTransaction: bool)" }
-				}
-				if (eth.getBlockByNumber) {
-					eth.getBlockByNumber.toString = function() { return "function (blockNumber: uint or latest earliest pending, isFullTransaction: bool)" }
-				}
-				if (eth.getTransactionReceipt) {
-					eth.getTransactionReceipt.toString = function() { return "function (transactionHash: bytes32)" }
-				}
-				if (eth.compile && eth.compile.solidity) {
-					eth.compile.solidity.toString = function() { return "function (sourceCode: string)" }
-				}
-				if (eth.compile && eth.compile.lll) {
-					eth.compile.lll.toString = function() { return "function (sourceCode: string)" }
-				}
-				if (eth.compile && eth.compile.serpent) {
-					eth.compile.serpent.toString = function() { return "function (sourceCode: string)" }
-				}
-				if (eth.getWork) {
-					eth.getWork.toString = function() { return "function ()" }
-				}
-				if (eth.submitWork) {
-					eth.submitWork.toString = function() { return "function (nonceFound: bytes8, headersPowHash: bytes32, mixDigest: bytes32)" }
-				}
-				if (eth.contract) {
-					eth.contract.toString = function() { return "function (abi: bytes)" }
-				}
-				if (eth.createAccessList) {
-					eth.createAccessList.toString = function() { return "function (transaction: object(from: bytes20, to: bytes20, gas: uint, gasPrice: uint, value: uint, data: bytes, nonce: uint))" }
-				}
-				if (eth.fillTransaction) {
-					eth.fillTransaction.toString = function() { return "function (transaction: object(from: bytes20, to: bytes20, gas: uint, gasPrice: uint, value: uint, data: bytes, nonce: uint))" }
-				}
-				if (eth.getBlock) {
-					eth.getBlock.toString = function() { return "function (blockNumberOrBlockHash: uint latest earliest pending or bytes)" }
-				}
-				if (eth.getBlockUncleCount) {
-					eth.getBlockUncleCount.toString = function() { return "function (blockNumberOrBlockHash: uint latest earliest pending or bytes)" }
-				}
-				if (eth.getHeaderByHash) {
-					eth.getHeaderByHash.toString = function() { return "function (BlockHash: bytes)" }
-				}
-				if (eth.getHeaderByNumber) {
-					eth.getHeaderByNumber.toString = function() { return "function (BlockNumber: uint)" }
-				}
-				if (eth.getProof) {
-					eth.getProof.toString = function() { return "function (address: bytes20, key: bytes[], blockNumberOrBlockHash: uint latest earliest pending or bytes)" }
-				}
-				if (eth.getRawTransaction) {
-					eth.getRawTransaction.toString = function() { return "function (transactionHash: bytes)" }
-				}
-				if (eth.getTransaction) {
-					eth.getTransaction.toString = function() { return "function (transactionHash: bytes)" }
-				}
-				if (eth.getTransactionFromBlock) {
-					eth.getTransactionFromBlock.toString = function() { return "function (blockNumberOrBlockHash: uint latest earliest pending or bytes, txIndex: uint, callback)" }
-				}
-				if (eth.getUncle) {
-					eth.getUncle.toString = function() { return "function (blockNumberOrBlockHash: uint latest earliest pending or bytes, uncleIndex: uint, isReturnTransactionObjects: bool, callback)" }
-				}
-				if (eth.getWork) {
-					eth.getWork.toString = function() { return "function (callback)" }
-				}
-				if (eth.iban) {
-					eth.iban.toString = function() { return "function (ethAddress: bytes20)" }
-				}
-				if (eth.resend) {
-					eth.resend.toString = function() { return "function (transaction: object(from: bytes20, to: bytes20, gas: uint, gasPrice: uint, value: uint, data: bytes, nonce: uint), gasPrice: uint, gasLimit: uint)" }
-				}
+				eth.getBalance.toString = function() { return "function (address: bytes20, blockNumber: uint or latest earliest pending)" }
+				eth.getStorageAt.toString = function() { return "function (storageAddress: bytes20, storagePos: uint, blockNumber: uint or latest earliest pending)" }
+				eth.getTransactionCount.toString = function() { return "function (address: bytes20, blockNumber: uint or latest earliest pending)" }	
+				eth.getBlockTransactionCount.toString = function() { return "function (args: string[])" }
+				eth.getCode.toString = function() { return "function (address: bytes20, blockNumber: uint or latest earliest pending)" }
+				eth.sign.toString = function() { return "function (address: bytes20, data: bytes)" }
+				eth.signTransaction.toString = function() { return "function (transaction: object(from: bytes20, to: bytes20, gas: uint, gasPrice: uint, value: uint, data: bytes, nonce: uint))" }
+				eth.sendTransaction.toString = function() { return "function (transaction: object(from: bytes20, to: bytes20, gas: uint, gasPrice: uint, value: uint, data: bytes, nonce: uint))" }
+				eth.sendRawTransaction.toString = function() { return "function (signedTransactionData: bytes)" }
+				eth.call.toString = function() { return "function ((transaction: object(from: bytes20, to: bytes20, gas: uint, gasPrice: uint, value: uint, data: bytes, nonce: uint), blockNumber: uint or latest earliest pending)" }
+				eth.estimateGas.toString = function() { return "function (transaction: object(from: bytes20, to: bytes20, gas: uint, gasPrice: uint, value: uint, data: bytes, nonce: uint), blockNumber: uint or latest earliest pending)" }
+				eth.getBlockByHash.toString = function() { return "function (blockHash: string, isFullTransaction: bool)" }
+				eth.getBlockByNumber.toString = function() { return "function (blockNumber: uint or latest earliest pending, isFullTransaction: bool)" }
+				eth.getTransactionReceipt.toString = function() { return "function (transactionHash: string)" }
+				eth.compile.solidity.toString = function() { return "function (sourceCode: string)" }
+				eth.compile.lll.toString = function() { return "function (sourceCode: string)" }
+				eth.compile.serpent.toString = function() { return "function (sourceCode: string)" }
+				eth.getWork.toString = function() { return "function ()" }
+				eth.submitWork.toString = function() { return "function (nonceFound: bytes8, headersPowHash: string, mixDigest: bytes32)" }
+				eth.contract.toString = function() { return "function (abi: bytes)" }
+				eth.createAccessList.toString = function() { return "function (transaction: object(from: bytes20, to: bytes20, gas: uint, gasPrice: uint, value: uint, data: bytes, nonce: uint))" }
+				eth.fillTransaction.toString = function() { return "function (transaction: object(from: bytes20, to: bytes20, gas: uint, gasPrice: uint, value: uint, data: bytes, nonce: uint))" }
+				eth.getBlock.toString = function() { return "function (blockNumberOrBlockHash: uint latest earliest pending or string)" }
+				eth.getBlockUncleCount.toString = function() { return "function (blockNumberOrBlockHash: uint latest earliest pending or string)" }
+				eth.getHeaderByHash.toString = function() { return "function (BlockHash: string)" }
+				eth.getHeaderByNumber.toString = function() { return "function (BlockNumber: uint)" }
+				eth.getProof.toString = function() { return "function (address: bytes20, key: bytes[], blockNumberOrBlockHash: uint latest earliest pending or string)" }
+				eth.getRawTransaction.toString = function() { return "function (transactionHash: string)" }
+				eth.getTransaction.toString = function() { return "function (transactionHash: string)" }
+				eth.getTransactionFromBlock.toString = function() { return "function (blockNumberOrBlockHash: uint latest earliest pending or string, transactionIndex: uint, callback)" }
+				eth.getUncle.toString = function() { return "function (blockNumberOrBlockHash: uint latest earliest pending or string, uncleIndex: uint, isReturnTransactionObjects: bool, callback)" }
+				eth.getWork.toString = function() { return "function (callback)" }
+				eth.iban.toString = function() { return "function (ethAddress: bytes20)" }
+				eth.resend.toString = function() { return "function (transaction: object(from: bytes20, to: bytes20, gas: uint, gasPrice: uint, value: uint, data: bytes, nonce: uint), gasPrice: uint, gasLimit: uint)" }
 			}
 
 
 			if (debug) {  
 				if (debug.accountRange) {
-					debug.accountRange.toString = function() { return "function (blockNumberOrBlockHash: uint latest earliest pending or bytes, start: string, maxResults: uint, skip: uint, reverse: bool)" }
+					debug.accountRange.toString = function() { return "function (blockNumberOrBlockHash: uint latest earliest pending or string, start: string, maxResults: uint, skip: uint, reverse: bool)" }
 				}
 				if (debug.backtraceAt) {
-					debug.backtraceAt.toString = function() { return "function ((filename:line): string)" }
+					debug.backtraceAt.toString = function() { return "function ((file:line): string)" }
 				}
 				if (debug.blockProfile) {
-					debug.blockProfile.toString = function() { return "function (filename: string, time: uint)" }
+					debug.blockProfile.toString = function() { return "function (file: string, time: uint)" }
 				}
 				if (debug.chaindbCompact) {
 					debug.chaindbCompact.toString = function() { return "function ()" }
@@ -170,7 +96,7 @@ func injectApiSignature(c *console.Console) {
 					debug.chaindbProperty.toString = function() { return "function (leveldb properties: string)" }
 				}
 				if (debug.cpuProfile) {
-					debug.cpuProfile.toString = function() { return "function (filename: string, time: uint)" }
+					debug.cpuProfile.toString = function() { return "function (file: string, time: uint)" }
 				}
 				if (debug.dumpBlock) {
 					debug.dumpBlock.toString = function() { return "function (blockNumber: uint or latest earliest pending)" }
@@ -191,25 +117,25 @@ func injectApiSignature(c *console.Console) {
 					debug.getBadBlocks.toString = function() { return "function ()" }
 				}
 				if (debug.getBlockRlp) {
-					debug.getBlockRlp.toString = function() { return "function (blockNumberOrBlockHash: uint latest earliest pending or bytes)" }
+					debug.getBlockRlp.toString = function() { return "function (blockNumberOrBlockHash: uint latest earliest pending or string)" }
 				}
 				if (debug.getHeaderRlp) {
 					debug.getHeaderRlp.toString = function() { return "function (blockNumber: uint)" }
 				}
 				if (debug.getModifiedAccountsByHash) {
-					debug.getModifiedAccountsByHash.toString = function() { return "function (startHash: bytes, endHash: bytes)" }
+					debug.getModifiedAccountsByHash.toString = function() { return "function (startHash: string, endHash: string)" }
 				}
 				if (debug.getModifiedAccountsByNumber) {
 					debug.getModifiedAccountsByNumber.toString = function() { return "function (startNum: uint64, endNum: uint64)" }
 				}
 				if (debug.goTrace) {
-					debug.goTrace.toString = function() { return "function (filename: string, runningTime: uint)" }
+					debug.goTrace.toString = function() { return "function (file: string, runningTime: uint)" }
 				}
 				if (debug.intermediateRoots) {
 					debug.intermediateRoots.toString = function() { return "function (blockHash: string)" }
 				}
 				if (debug.mutexProfile) {
-					debug.mutexProfile.toString = function() { return "function (filename: string, nsec: uint)" }
+					debug.mutexProfile.toString = function() { return "function (file: string, nsec: uint)" }
 				}
 				if (debug.preimage) {
 					debug.preimage.toString = function() { return "function (hash: string)" }
@@ -236,16 +162,16 @@ func injectApiSignature(c *console.Console) {
 					debug.stacks.toString = function() { return "function ()" }
 				}
 				if (debug.standardTraceBadBlockToFile) {
-					debug.standardTraceBadBlockToFile.toString = function() { return "function (blockHash: string, optionObject(disableStorage: bool, disableMemory: bool, disableStack: bool, fullStorage: bool))" }
+					debug.standardTraceBadBlockToFile.toString = function() { return "function (blockHash: string, optionObject: object(disableStorage: bool, disableMemory: bool, disableStack: bool, fullStorage: bool))" }
 				}
 				if (debug.standardTraceBlockToFile) {
-					debug.standardTraceBlockToFile.toString = function() { return "function (blockHash: string, optionObject(disableStorage: bool, disableMemory: bool, disableStack: bool, fullStorage: bool))" }
+					debug.standardTraceBlockToFile.toString = function() { return "function (blockHash: string, optionObject: object(disableStorage: bool, disableMemory: bool, disableStack: bool, fullStorage: bool))" }
 				}
 				if (debug.startCPUProfile) {
-					debug.startCPUProfile.toString = function() { return "function (filename: string)" }
+					debug.startCPUProfile.toString = function() { return "function (file: string)" }
 				}
 				if (debug.startGoTrace) {
-					debug.startGoTrace.toString = function() { return "function (filename: string)" }
+					debug.startGoTrace.toString = function() { return "function (file: string)" }
 				}
 				if (debug.stopCPUProfile) {
 					debug.stopCPUProfile.toString = function() { return "function ()" }
@@ -254,31 +180,31 @@ func injectApiSignature(c *console.Console) {
 					debug.stopGoTrace.toString = function() { return "function ()" }
 				}
 				if (debug.storageRangeAt) {
-					debug.storageRangeAt.toString = function() { return "function (blockHash: string, transactionIdx: uint, contractAddress: bytes20, keyStart: string, maxResult: uint)" }
+					debug.storageRangeAt.toString = function() { return "function (blockHash: string, transactionIndex: uint, contractAddress: bytes20, keyStart: string, maxResult: uint)" }
 				}
 				if (debug.testSignCliqueBlock) {
 					debug.testSignCliqueBlock.toString = function() { return "function (sigAddress: bytes20, blockNumber: uint)" }
 				}
 				if (debug.traceBadBlock) {
-					debug.traceBadBlock.toString = function() { return "function (blockHash: string, optionObject: (disableStorage: bool, disableStack: bool, enableMemory: bool, enableReturnData: bool, tracer: string, timeOut: string, tracerConfig: object(onlyTopCall: bool, withLog: bool)))" }
+					debug.traceBadBlock.toString = function() { return "function (blockHash: string, optionObject: object(disableStorage: bool, disableStack: bool, enableMemory: bool, enableReturnData: bool, tracer: string, timeOut: string, tracerConfig: object(onlyTopCall: bool, withLog: bool)))" }
 				}
 				if (debug.traceBlock) {
-					debug.traceBlock.toString = function() { return "function (blockRlp: string, optionObject: (disableStorage: bool, disableStack: bool, enableMemory: bool, enableReturnData: bool, tracer: string, timeOut: string, tracerConfig: object(onlyTopCall: bool, withLog: bool)))" }
+					debug.traceBlock.toString = function() { return "function (blockRlp: string, optionObject: object(disableStorage: bool, disableStack: bool, enableMemory: bool, enableReturnData: bool, tracer: string, timeOut: string, tracerConfig: object(onlyTopCall: bool, withLog: bool)))" }
 				}
 				if (debug.traceBlockByHash) {
-					debug.traceBlockByHash.toString = function() { return "function (blockHash: string, optionObject: (disableStorage: bool, disableStack: bool, enableMemory: bool, enableReturnData: bool, tracer: string, timeOut: string, tracerConfig: object(onlyTopCall: bool, withLog: bool)))" }
+					debug.traceBlockByHash.toString = function() { return "function (blockHash: string, optionObject: object(disableStorage: bool, disableStack: bool, enableMemory: bool, enableReturnData: bool, tracer: string, timeOut: string, tracerConfig: object(onlyTopCall: bool, withLog: bool)))" }
 				}
 				if (debug.traceBlockByNumber) {
-					debug.traceBlockByNumber.toString = function() { return "function (blockNumber: uint, optionObject: (disableStorage: bool, disableStack: bool, enableMemory: bool, enableReturnData: bool, tracer: string, timeOut: string, tracerConfig: object(onlyTopCall: bool, withLog: bool)))" }
+					debug.traceBlockByNumber.toString = function() { return "function (blockNumber: uint, optionObject: object(disableStorage: bool, disableStack: bool, enableMemory: bool, enableReturnData: bool, tracer: string, timeOut: string, tracerConfig: object(onlyTopCall: bool, withLog: bool)))" }
 				}
 				if (debug.traceBlockFromFile) {
-					debug.traceBlockFromFile.toString = function() { return "function (fileName: string, optionObject: (disableStorage: bool, disableStack: bool, enableMemory: bool, enableReturnData: bool, tracer: string, timeOut: string, tracerConfig: object(onlyTopCall: bool, withLog: bool)))" }
+					debug.traceBlockFromFile.toString = function() { return "function (file: string, optionObject: object(disableStorage: bool, disableStack: bool, enableMemory: bool, enableReturnData: bool, tracer: string, timeOut: string, tracerConfig: object(onlyTopCall: bool, withLog: bool)))" }
 				}
 				if (debug.traceCall) {
-					debug.traceCall.toString = function() { return "function ((transaction: object(from: bytes20, to: bytes20, gas: uint, gasPrice: uint, value: uint, data: bytes, nonce: uint), blockNrOrHash: uint latest earliest pending or bytes, optionObject: (disableStorage: bool, disableStack: bool, enableMemory: bool, enableReturnData: bool, tracer: string, timeOut: string, tracerConfig: object(onlyTopCall: bool, withLog: bool)))" }
+					debug.traceCall.toString = function() { return "function ((transaction: object(from: bytes20, to: bytes20, gas: uint, gasPrice: uint, value: uint, data: bytes, nonce: uint), blockNumberOrBlockHash: uint latest earliest pending or string, optionObject: (disableStorage: bool, disableStack: bool, enableMemory: bool, enableReturnData: bool, tracer: string, timeOut: string, tracerConfig: object(onlyTopCall: bool, withLog: bool)))" }
 				}
 				if (debug.traceTransaction) {
-					debug.traceTransaction.toString = function() { return "function (transactionHash: bytes, optionObject: (disableStorage: bool, disableStack: bool, enableMemory: bool, enableReturnData: bool, tracer: string, timeOut: string, tracerConfig: object(onlyTopCall: bool, withLog: bool)))" }
+					debug.traceTransaction.toString = function() { return "function (transactionHash: string, optionObject: object(disableStorage: bool, disableStack: bool, enableMemory: bool, enableReturnData: bool, tracer: string, timeOut: string, tracerConfig: object(onlyTopCall: bool, withLog: bool)))" }
 				}
 				if (debug.verbosity) {
 					debug.verbosity.toString = function() { return "function (logLevel: int)" }
@@ -299,5 +225,215 @@ func injectApiSignature(c *console.Console) {
 					debug.getReadStorageProofAtBlock.toString = function() { return "function (blockNumber: uint64)" }
 				}
 			}
+
+
+			if (miner) {
+				if (miner.getHashrate) {
+					miner.getHashrate.toString = function() { return "function ()" }
+				}
+				if (miner.setEtherbase) {
+					miner.setEtherbase.toString = function() { return "function (address: bytes20)" }
+				}
+				if (miner.setExtra) {
+					miner.setExtra.toString = function() { return "function (extraData: bytes32)" }
+				}
+				if (miner.setGasLimit) {
+					miner.setGasLimit.toString = function() { return "function (gasLimit: uint)" }
+				}
+				if (miner.setGasPrice) {
+					miner.setGasPrice.toString = function() { return "function (gasPrice: uint)" }
+				}
+				if (miner.setRecommitInterval) {
+					miner.setRecommitInterval.toString = function() { return "function (timeInterval: uint)" }
+				}
+				if (miner.start) {
+					miner.start.toString = function() { return "function (threadsNum: unit)" }
+				}
+				if (miner.stop) {
+					miner.stop.toString = function() { return "function ()" }
+				}
+			}
+
+
+			if (personal) {
+				if (personal.deriveAccount) {
+					personal.deriveAccount.toString = function() { return "function (seed: string, derivationPath: string)" }
+				}
+				if (personal.ecRecover) {
+					personal.ecRecover.toString = function() { return "function (data: string, signature: string)" }
+				}
+				if (personal.getListAccounts) {
+					personal.getListAccounts.toString = function() { return "function (callback)" }
+				}
+				if (personal.getListWallets) {
+					personal.getListWallets.toString = function() { return "function (callback)" }
+				}
+				if (personal.importRawKey) {
+					personal.importRawKey.toString = function() { return "function (privateKey: string, passphrase: string)" }
+				}
+				if (personal.initializeWallet) {
+					personal.initializeWallet.toString = function() { return "function (url: string)" }
+				}
+				if (personal.lockAccount) {
+					personal.lockAccount.toString = function() { return "function (address: bytes20)" }
+				}
+				if (personal.newAccount) {
+					personal.newAccount.toString = function() { return "function (password: string)" }
+				}
+				if (personal.openWallet) {
+					personal.openWallet.toString = function() { return "function (url: string, passphrase: string)" }
+				}
+				if (personal.sendTransaction) {
+					personal.sendTransaction.toString = function() { return "function (transaction: object(from: bytes20, to: bytes20, gas: uint, gasPrice: uint, value: uint, data: bytes, nonce: uint), passphrase: string)" }
+				}
+				if (personal.sign) {
+					personal.sign.toString = function() { return "function (dataToSign: string, accountAddress: bytes20, passphrase: string)" }
+				}
+				if (personal.signTransaction) {
+					personal.signTransaction.toString = function() { return "function (transaction: object(from: bytes20, to: bytes20, gas: uint, gasPrice: uint, value: uint, data: bytes, nonce: uint), passphrase: string)" }
+				}
+				if (personal.unlockAccount) {
+					personal.unlockAccount.toString = function() { return "function (accountAddress: bytes20, passphrase: string, time: uint)" }
+				}
+				if (personal.unpair) {
+					personal.unpair.toString = function() { return "function (url: string, pin: string)" }
+				}
+			}
+
+
+			if (utils) {
+				if (utils.saveString) {
+					utils.saveString.toString = function() { return "function (data: string, fileName: string)" }
+				}
+			}
+
+
+			if (web3) {
+				if (web3.shh) {
+					if (web3.shh.addPrivateKey) {
+						web3.shh.addPrivateKey.toString = function() { return "function (privateKey: string, callback)" }
+					}
+					if (web3.shh.addSymKey) {
+						web3.shh.addSymKey.toString = function() { return "function (symKey: string, callback)" }
+					}
+					if (web3.shh.deleteKeyPair) {
+						web3.shh.deleteKeyPair.toString = function() { return "function (id: string, callback)" }
+					}
+					if (web3.shh.deleteSymKey) {
+						web3.shh.deleteSymKey.toString = function() { return "function (symKeyID: string, callback)" }
+					}
+					if (web3.shh.generateSymKeyFromPassword) {
+						web3.shh.generateSymKeyFromPassword.toString = function() { return "function (password: string, callback)" }
+					}
+					if (web3.shh.getPrivateKey) {
+						web3.shh.getPrivateKey.toString = function() { return "function (id: string, callback)" }
+					}
+					if (web3.shh.getPublicKey) {
+						web3.shh.getPublicKey.toString = function() { return "function (id: string, callback)" }
+					}
+					if (web3.shh.getSymKey) {
+						web3.shh.getSymKey.toString = function() { return "function (id: string, callback)" }
+					}
+					if (web3.shh.hasKeyPair) {
+						web3.shh.hasKeyPair.toString = function() { return "function (id: string, callback)" }
+					}
+					if (web3.shh.hasSymKey) {
+						web3.shh.hasSymKey.toString = function() { return "function (id: string, callback)" }
+					}
+					if (web3.shh.markTrustedPeer) {
+						web3.shh.markTrustedPeer.toString = function() { return "function (enode: string, callback)" }
+					}
+					if (web3.shh.newKeyPair) {
+						web3.shh.newKeyPair.toString = function() { return "function (callback)" }
+					}
+					if (web3.shh.newMessageFilter) {
+						web3.shh.newMessageFilter.toString = function() { return "function (messageFilterObject: object(symKeyID: string, privateKeyID: string, sig: string, minPow: uint, topics: bytes4[]))" }
+					}
+					if (web3.shh.newSymKey) {
+						web3.shh.newSymKey.toString = function() { return "function (callback)" }
+					}
+					if (web3.shh.post) {
+						web3.shh.post.toString = function() { return "function (messageObject: object(symKeyId: string, pubKey: string, sig: string, ttl: uint, topic: string, payload: string, powTime: uint, powTarget: uint))" }
+					}
+					if (web3.shh.setMaxMessageSize) {
+						web3.shh.setMaxMessageSize.toString = function() { return "function (size: uint, callback)" }
+					}
+					if (web3.shh.setMinPoW) {
+						web3.shh.setMinPoW.toString = function() { return "function (pow: uint, callback)" }
+					}
+					if (web3.shh.version) {
+						web3.shh.version.toString = function() { return "function ()" }
+					}
+				}
+
+
+				if (web3.BigNumber) {
+					web3.BigNumber.toString = function() { return "function (number: int float string or BigNumber)" }
+				}
+				if (web3.createBatch) {
+					web3.createBatch.toString = function() { return "function ()" }
+				}
+				if (web3.fromAscii) {
+					web3.fromAscii.toString = function() { return "function (asciiData: string)" }
+				}
+				if (web3.fromDecimal) {
+					web3.fromDecimal.toString = function() { return "function (value: int float or string)" }
+				}
+				if (web3.fromICAP) {
+					web3.fromICAP.toString = function() { return "function (icap: string)" }
+				}
+				if (web3.fromUtf8) {
+					web3.fromUtf8.toString = function() { return "function (utf8Data: string)" }
+				}
+				if (web3.fromWei) {
+					web3.fromWei.toString = function() { return "function (number: uint string or BigNumber, unit: string)" }
+				}
+				if (web3.isAddress) {
+					web3.isAddress.toString = function() { return "function (HexString: string)" }
+				}
+				if (web3.isChecksumAddress) {
+					web3.isChecksumAddress.toString = function() { return "function (address: bytes)" }
+				}
+				if (web3.isConnected) {
+					web3.isConnected.toString = function() { return "function ()" }
+				}
+				if (web3.padLeft) {
+					web3.padLeft.toString = function() { return "function (value: string, length: uint, paddingCharacter: string)" }
+				}
+				if (web3.padRight) {
+					web3.padRight.toString = function() { return "function (value: string, length: uint, paddingCharacter: string)" }
+				}
+				if (web3.reset) {
+					web3.reset.toString = function() { return "function (keepIsSyncing: bool)" }
+				}
+				if (web3.setProvider) {
+					web3.setProvider.toString = function() { return "function (provider: web3 provider)" }
+				}
+				if (web3.sha3) {
+					web3.sha3.toString = function() { return "function (data: bytes)" }
+				}
+				if (web3.toAscii) {
+					web3.toAscii.toString = function() { return "function (hex: string)" }
+				}
+				if (web3.toBigNumber) {
+					web3.toBigNumber.toString = function() { return "function (value: int or string)" }
+				}
+				if (web3.toChecksumAddress) {
+					web3.toChecksumAddress.toString = function() { return "function (address: bytes20)" }
+				}
+				if (web3.toDecimal) {
+					web3.toDecimal.toString = function() { return "function (hexString: string)" }
+				}
+				if (web3.toHex) {
+					web3.toHex.toString = function() { return "function (val: string int float object array or BigNumber)" }
+				}
+				if (web3.toUtf8) {
+					web3.toUtf8.toString = function() { return "function (hexString: string)" }
+				}
+				if (web3.toWei) {
+					web3.toWei.toString = function() { return "function (number: string or BigNumber, unit: string)" }
+				}
+			}		
+			
 	`)
 }
