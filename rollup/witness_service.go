@@ -180,7 +180,7 @@ func ProcessBatch(input []byte, parentBlockHash common.Hash, rollupBackend *Roll
 	parent := eth.BlockChain().GetBlockByHash(parentBlockHash)
 	inputChainStore := rollupBackend.Store.InputChain()
 	batch := &binding.RollupInputBatches{}
-	if err := batch.Decode(input); err != nil { //may decode failed, just ignore
+	if err := batch.Decode(input, rollupBackend.blobOracle); err != nil { //may decode failed, just ignore
 		log.Warn("malicious batch code found", "err", err)
 	}
 	if parent.Header().TotalExecutedQueueNum() != batch.QueueStart {

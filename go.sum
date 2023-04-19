@@ -267,8 +267,12 @@ github.com/gorilla/mux v1.8.0/go.mod h1:DVbg23sWSpFRCP0SfiEN6jmj59UnW/n46BH5rLB7
 github.com/gorilla/websocket v1.4.0/go.mod h1:E7qHFY5m1UJ88s3WnNqhKjPHQ0heANvMoAMk2YaljkQ=
 github.com/gorilla/websocket v1.4.2 h1:+/TMaTYc4QFitKJxsQ7Yye35DkWvkdLcvGKqM+x0Ufc=
 github.com/gorilla/websocket v1.4.2/go.mod h1:YR8l580nyteQvAITg2hZ9XVh4b55+EU/adAjf1fMHhE=
+github.com/goshennetwork/rollup-contracts v0.1.1-0.20230403033031-ad720ab8348f h1:J619jSAM7x/5vEqA6ERxMl/QSOSgem2BaDSDvOY+b5U=
+github.com/goshennetwork/rollup-contracts v0.1.1-0.20230403033031-ad720ab8348f/go.mod h1:pWT/L6aQQpXuPSwUk0op8uIV1ZHSnC1TXRJ+lJZ19Ic=
 github.com/goshennetwork/rollup-contracts v0.2.0 h1:GqWCFCux66gyT5ismPlYJwLZZeopeAxECGETL0A4ke4=
 github.com/goshennetwork/rollup-contracts v0.2.0/go.mod h1:pWT/L6aQQpXuPSwUk0op8uIV1ZHSnC1TXRJ+lJZ19Ic=
+github.com/goshennetwork/rollup-contracts v0.2.1-0.20230411094436-3436fe362435 h1:EiqW+MDpcDFXYeTspIfii4eS8kvXstLTJWOS56TLgTQ=
+github.com/goshennetwork/rollup-contracts v0.2.1-0.20230411094436-3436fe362435/go.mod h1:pWT/L6aQQpXuPSwUk0op8uIV1ZHSnC1TXRJ+lJZ19Ic=
 github.com/gotestyourself/gotestyourself v2.2.0+incompatible/go.mod h1:zZKM6oeNM8k+FRljX1mnzVYeS8wiGgQyvST1/GafPbY=
 github.com/graph-gophers/graphql-go v0.0.0-20201113091052-beb923fada29/go.mod h1:9CQHMSxwO4MprSdzoIEobiHpoLtHm77vfxsvsIN5Vuc=
 github.com/graph-gophers/graphql-go v1.2.1-0.20210916100229-446a2dd13dd5 h1:zTRjb32PNBDI2BhdpfcNm64ZxY+j+IevU7KhPYJFGk0=
@@ -431,6 +435,8 @@ github.com/onsi/gomega v1.4.3/go.mod h1:ex+gbHU/CVuBBDIJjb2X0qEXbFg53c61hWP/1Cpa
 github.com/onsi/gomega v1.7.1/go.mod h1:XdKZgCCFLUoM/7CFJVPcG8C1xQ1AJ0vpAezJrB7JYyY=
 github.com/onsi/gomega v1.10.1 h1:o0+MgICZLuZ7xjH7Vx6zS/zcu93/BEp1VwkIW1mEXCE=
 github.com/onsi/gomega v1.10.1/go.mod h1:iN09h71vgCQne3DLsj+A5owkum+a2tYe+TOCB1ybHNo=
+github.com/ontology-layer-2/rollup-contracts v0.1.1-0.20230330075645-366fedb0bc05 h1:/5F/kPPQ1a2CH6cibQnbEifhHyZmZzOsJOJ/4bns6rg=
+github.com/ontology-layer-2/rollup-contracts v0.1.1-0.20230330075645-366fedb0bc05/go.mod h1:chAzUCrsdPWShgXcUkHWzJcd4RB7WTIEFygf8FmxwUI=
 github.com/opencontainers/go-digest v1.0.0/go.mod h1:0JzlMkj0TRzQZfJkVvzbP0HBR3IKzErnv2BNG4W4MAM=
 github.com/opencontainers/image-spec v1.0.1/go.mod h1:BtxoFyWECRxE4U/7sNtV5W15zMzWCbyJoFRP3s7yZA0=
 github.com/opencontainers/runc v1.0.1/go.mod h1:aTaHFFwQXuA71CiyxOdFFIorAoemI04suvGRQFzWTD0=

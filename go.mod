@@ -28,7 +28,7 @@ require (
 	github.com/google/gofuzz v1.2.0
 	github.com/google/uuid v1.1.5
 	github.com/gorilla/websocket v1.4.2
-	github.com/goshennetwork/rollup-contracts v0.2.0
+	github.com/goshennetwork/rollup-contracts v0.2.1-0.20230411094436-3436fe362435
 	github.com/graph-gophers/graphql-go v1.2.1-0.20210916100229-446a2dd13dd5
 	github.com/hashicorp/go-bexpr v0.1.10
 	github.com/hashicorp/golang-lru v0.5.5-0.20210104140557-80c98217689d

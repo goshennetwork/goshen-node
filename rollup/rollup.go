@@ -10,6 +10,7 @@ import (
 	"github.com/ethereum/go-ethereum/ethdb"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/goshennetwork/rollup-contracts/binding"
+	"github.com/goshennetwork/rollup-contracts/blob"
 	"github.com/goshennetwork/rollup-contracts/store"
 	"github.com/goshennetwork/rollup-contracts/store/schema"
 	lru "github.com/hashicorp/golang-lru"
@@ -31,16 +32,16 @@ type EthBackend interface {
 type RollupBackend struct {
 	EthBackend EthBackend
 	Store      *store.Storage
+	blobOracle blob.BlobOracle
 	//l1 client
 	L1Client   *jsonrpc.Client
 	IsVerifier bool
-
 	blockCache *lru.Cache
 }
 
-func NewBackend(ethBackend EthBackend, db schema.PersistStore, l1client *jsonrpc.Client, isVerifier bool) *RollupBackend {
+func NewBackend(ethBackend EthBackend, db schema.PersistStore, blobOracle blob.BlobOracle, l1client *jsonrpc.Client, isVerifier bool) *RollupBackend {
 	cache, _ := lru.New(1024)
-	return &RollupBackend{ethBackend, store.NewStorage(db), l1client, isVerifier, cache}
+	return &RollupBackend{ethBackend, store.NewStorage(db), blobOracle, l1client, isVerifier, cache}
 }
 
 func (self *RollupBackend) IsSynced() bool {
