@@ -103,6 +103,9 @@ func localConsole(ctx *cli.Context) error {
 		console.Evaluate(script)
 		return nil
 	}
+
+	injectApiSignature(console)
+
 	// Otherwise print the welcome screen and enter interactive mode
 	console.Welcome()
 	console.Interactive()
@@ -162,6 +165,7 @@ func remoteConsole(ctx *cli.Context) error {
 		return nil
 	}
 
+	injectApiSignature(console)
 	// Otherwise print the welcome screen and enter interactive mode
 	console.Welcome()
 	console.Interactive()
