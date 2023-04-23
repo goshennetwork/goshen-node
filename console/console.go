@@ -485,3 +485,7 @@ func (c *Console) Stop(graceful bool) error {
 	c.jsre.Stop(graceful)
 	return nil
 }
+
+func (c *Console) Run(code string) (v goja.Value, err error) {
+	return c.jsre.Run(code)
+}
