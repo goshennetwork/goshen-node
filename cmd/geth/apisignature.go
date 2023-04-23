@@ -4,44 +4,44 @@ import "github.com/ethereum/go-ethereum/console"
 
 func injectApiSignature(c *console.Console) {
 	c.Evaluate(`
-		if (l2) {  
-			if(l2.getBatch){
+		if (typeof l2 !== 'undefined') {  
+			if (typeof l2.getBatch !== 'undefined') {  
 				l2.getBatch.toString = function() { return "function (batchIndex: uint64, useDetail: bool)" }
 			}
-			if(l2.getBatchIndex){
+			if (typeof l2.getBatchIndex !== 'undefined') {  
 				l2.getBatchIndex.toString = function() { return "function (blockNumber: uint64)" }
 			}
-			if(l2.getBatchState){
+			if (typeof l2.getBatchState !== 'undefined') {  
 				l2.getBatchState.toString = function() { return "function (batchIndex: uint64)" }
 			}
-			if(l2.getEnqueuedTxs){
+			if(typeof l2.getEnqueuedTxs !== 'undefined'){
 				l2.getEnqueuedTxs.toString = function() { return "function (queueStart: uint64, queueNum: uint64)" }
 			}
-			if(l2.getL2MMRProof){
+			if(typeof l2.getL2MMRProof !== 'undefined'){
 				l2.getL2MMRProof.toString = function() { return "function (msgIndex: uint64, size: uint64)" }
 			}
-			if(l2.getL2RelayMsgParams){
+			if(typeof l2.getL2RelayMsgParams !== 'undefined'){
 				l2.getL2RelayMsgParams.toString = function() { return "function (msgIndex: uint64)" }
 			}
-			if(l2.getPendingTxBatches){
+			if(typeof l2.getPendingTxBatches !== 'undefined'){
 				l2.getPendingTxBatches.toString = function() { return "function ()" }
 			}
-			if(l2.globalInfo){
+			if(typeof l2.globalInfo !== 'undefined'){
 				l2.globalInfo.toString = function() { return "function ()" }
 			}
-			if(l2.getState){
+			if(typeof l2.getState !== 'undefined'){
 				l2.getState.toString = function() { return "function (batchIndex: uint64)" }
 			}
-			if(l2.inputBatchNumber){
+			if(typeof l2.inputBatchNumber !== 'undefined'){
 				l2.inputBatchNumber.toString = function() { return "function ()" }
 			}
-			if(l2.stateBatchNumber){
+			if(typeof l2.stateBatchNumber !== 'undefined'){
 				l2.stateBatchNumber.toString = function() { return "function ()" }
 			}
 		}
 
 
-		if (eth) {
+		if(typeof eth !== 'undefined'){
 			eth.getBalance.toString = function() { return "function (address: bytes20, blockNumber: uint or latest earliest pending)" }
 			eth.getStorageAt.toString = function() { return "function (storageAddress: bytes20, storagePos: uint, blockNumber: uint or latest earliest pending)" }
 			eth.getTransactionCount.toString = function() { return "function (address: bytes20, blockNumber: uint or latest earliest pending)" }	
@@ -79,419 +79,418 @@ func injectApiSignature(c *console.Console) {
 		}
 
 
-		if (debug) {  
-			if (debug.accountRange) {
+		if(typeof debug !== 'undefined'){
+			if (typeof debug.accountRange !== 'undefined') {
 				debug.accountRange.toString = function() { return "function (blockNumberOrBlockHash: uint latest earliest pending or string, start: string, maxResults: uint, skip: uint, reverse: bool)" }
 			}
-			if (debug.backtraceAt) {
+			if (typeof debug.backtraceAt !== 'undefined') {
 				debug.backtraceAt.toString = function() { return "function ((file:line): string)" }
 			}
-			if (debug.blockProfile) {
+			if (typeof debug.blockProfile !== 'undefined') {
 				debug.blockProfile.toString = function() { return "function (file: string, time: uint)" }
 			}
-			if (debug.chaindbCompact) {
+			if (typeof debug.chaindbCompact !== 'undefined') {
 				debug.chaindbCompact.toString = function() { return "function ()" }
 			}
-			if (debug.chaindbProperty) {
+			if (typeof debug.chaindbProperty !== 'undefined') {
 				debug.chaindbProperty.toString = function() { return "function (leveldb properties: string)" }
 			}
-			if (debug.cpuProfile) {
+			if (typeof debug.cpuProfile !== 'undefined') {
 				debug.cpuProfile.toString = function() { return "function (file: string, time: uint)" }
 			}
-			if (debug.dumpBlock) {
+			if (typeof debug.dumpBlock !== 'undefined') {
 				debug.dumpBlock.toString = function() { return "function (blockNumber: uint or latest earliest pending)" }
 			}
-			if (debug.freeOSMemory) {
+			if (typeof debug.freeOSMemory !== 'undefined') {
 				debug.freeOSMemory.toString = function() { return "function ()" }
 			}
-			if (debug.freezeClient) {
+			if (typeof debug.freezeClient !== 'undefined') {
 				debug.freezeClient.toString = function() { return "function ()" }
 			}
-			if (debug.gcStats) {
+			if (typeof debug.gcStats !== 'undefined') {
 				debug.gcStats.toString = function() { return "function ()" }
 			}
-			if (debug.getAccessibleState) {
+			if (typeof debug.getAccessibleState !== 'undefined') {
 				debug.getAccessibleState.toString = function() { return "function (from: uint, to: uint)" }
 			}
-			if (debug.getBadBlocks) {
+			if (typeof debug.getBadBlocks !== 'undefined') {
 				debug.getBadBlocks.toString = function() { return "function ()" }
 			}
-			if (debug.getBlockRlp) {
+			if (typeof debug.getBlockRlp !== 'undefined') {
 				debug.getBlockRlp.toString = function() { return "function (blockNumberOrBlockHash: uint latest earliest pending or string)" }
 			}
-			if (debug.getHeaderRlp) {
+			if (typeof debug.getHeaderRlp !== 'undefined') {
 				debug.getHeaderRlp.toString = function() { return "function (blockNumber: uint)" }
 			}
-			if (debug.getModifiedAccountsByHash) {
+			if (typeof debug.getModifiedAccountsByHash !== 'undefined') {
 				debug.getModifiedAccountsByHash.toString = function() { return "function (startHash: string, endHash: string)" }
 			}
-			if (debug.getModifiedAccountsByNumber) {
+			if (typeof debug.getModifiedAccountsByNumber !== 'undefined') {
 				debug.getModifiedAccountsByNumber.toString = function() { return "function (startNum: uint64, endNum: uint64)" }
 			}
-			if (debug.goTrace) {
+			if (typeof debug.goTrace !== 'undefined') {
 				debug.goTrace.toString = function() { return "function (file: string, runningTime: uint)" }
 			}
-			if (debug.intermediateRoots) {
+			if (typeof debug.intermediateRoots !== 'undefined') {
 				debug.intermediateRoots.toString = function() { return "function (blockHash: string)" }
 			}
-			if (debug.mutexProfile) {
+			if (typeof debug.mutexProfile !== 'undefined') {
 				debug.mutexProfile.toString = function() { return "function (file: string, nsec: uint)" }
 			}
-			if (debug.preimage) {
+			if (typeof debug.preimage !== 'undefined') {
 				debug.preimage.toString = function() { return "function (hash: string)" }
 			}
-			if (debug.printBlock) {
+			if (typeof debug.printBlock !== 'undefined') {
 				debug.printBlock.toString = function() { return "function (blockNumber: uint)" }
 			}
-			if (debug.seedHash) {
+			if (typeof debug.seedHash !== 'undefined') {
 				debug.seedHash.toString = function() { return "function (blockNumber: uint)" }
 			}
-			if (debug.setBlockProfileRate) {
+			if (typeof debug.setBlockProfileRate !== 'undefined') {
 				debug.setBlockProfileRate.toString = function() { return "function (rate: int)" }
 			}
-			if (debug.setGCPercent) {
+			if (typeof debug.setGCPercent !== 'undefined') {
 				debug.setGCPercent.toString = function() { return "function (v: int)" }
 			}
-			if (debug.setHead) {
+			if (typeof debug.setHead !== 'undefined') {
 				debug.setHead.toString = function() { return "function (blockNumber: string)" }
 			}
-			if (debug.setMutexProfileFraction) {
+			if (typeof debug.setMutexProfileFraction !== 'undefined') {
 				debug.setMutexProfileFraction.toString = function() { return "function (rate: int)" }
 			}
-			if (debug.stacks) {
+			if (typeof debug.stacks !== 'undefined') {
 				debug.stacks.toString = function() { return "function ()" }
 			}
-			if (debug.standardTraceBadBlockToFile) {
+			if (typeof debug.standardTraceBadBlockToFile !== 'undefined') {
 				debug.standardTraceBadBlockToFile.toString = function() { return "function (blockHash: string, optionObject: object(disableStorage: bool, disableMemory: bool, disableStack: bool, fullStorage: bool))" }
 			}
-			if (debug.standardTraceBlockToFile) {
+			if (typeof debug.standardTraceBlockToFile !== 'undefined') {
 				debug.standardTraceBlockToFile.toString = function() { return "function (blockHash: string, optionObject: object(disableStorage: bool, disableMemory: bool, disableStack: bool, fullStorage: bool))" }
 			}
-			if (debug.startCPUProfile) {
+			if (typeof debug.startCPUProfile !== 'undefined') {
 				debug.startCPUProfile.toString = function() { return "function (file: string)" }
 			}
-			if (debug.startGoTrace) {
+			if (typeof debug.startGoTrace !== 'undefined') {
 				debug.startGoTrace.toString = function() { return "function (file: string)" }
 			}
-			if (debug.stopCPUProfile) {
+			if (typeof debug.stopCPUProfile !== 'undefined') {
 				debug.stopCPUProfile.toString = function() { return "function ()" }
 			}
-			if (debug.stopGoTrace) {
+			if (typeof debug.stopGoTrace !== 'undefined') {
 				debug.stopGoTrace.toString = function() { return "function ()" }
 			}
-			if (debug.storageRangeAt) {
+			if (typeof debug.storageRangeAt !== 'undefined') {
 				debug.storageRangeAt.toString = function() { return "function (blockHash: string, transactionIndex: uint, contractAddress: bytes20, keyStart: string, maxResult: uint)" }
 			}
-			if (debug.testSignCliqueBlock) {
+			if (typeof debug.testSignCliqueBlock !== 'undefined') {
 				debug.testSignCliqueBlock.toString = function() { return "function (sigAddress: bytes20, blockNumber: uint)" }
 			}
-			if (debug.traceBadBlock) {
+			if (typeof debug.traceBadBlock !== 'undefined') {
 				debug.traceBadBlock.toString = function() { return "function (blockHash: string, optionObject: object(disableStorage: bool, disableStack: bool, enableMemory: bool, enableReturnData: bool, tracer: string, timeOut: string, tracerConfig: object(onlyTopCall: bool, withLog: bool)))" }
 			}
-			if (debug.traceBlock) {
+			if (typeof debug.traceBlock !== 'undefined') {
 				debug.traceBlock.toString = function() { return "function (blockRlp: string, optionObject: object(disableStorage: bool, disableStack: bool, enableMemory: bool, enableReturnData: bool, tracer: string, timeOut: string, tracerConfig: object(onlyTopCall: bool, withLog: bool)))" }
 			}
-			if (debug.traceBlockByHash) {
+			if (typeof debug.traceBlockByHash !== 'undefined') {
 				debug.traceBlockByHash.toString = function() { return "function (blockHash: string, optionObject: object(disableStorage: bool, disableStack: bool, enableMemory: bool, enableReturnData: bool, tracer: string, timeOut: string, tracerConfig: object(onlyTopCall: bool, withLog: bool)))" }
 			}
-			if (debug.traceBlockByNumber) {
+			if (typeof debug.traceBlockByNumber !== 'undefined') {
 				debug.traceBlockByNumber.toString = function() { return "function (blockNumber: uint, optionObject: object(disableStorage: bool, disableStack: bool, enableMemory: bool, enableReturnData: bool, tracer: string, timeOut: string, tracerConfig: object(onlyTopCall: bool, withLog: bool)))" }
 			}
-			if (debug.traceBlockFromFile) {
+			if (typeof debug.traceBlockFromFile !== 'undefined') {
 				debug.traceBlockFromFile.toString = function() { return "function (file: string, optionObject: object(disableStorage: bool, disableStack: bool, enableMemory: bool, enableReturnData: bool, tracer: string, timeOut: string, tracerConfig: object(onlyTopCall: bool, withLog: bool)))" }
 			}
-			if (debug.traceCall) {
+			if (typeof debug.traceCall !== 'undefined') {
 				debug.traceCall.toString = function() { return "function ((transaction: object(from: bytes20, to: bytes20, gas: uint, gasPrice: uint, value: uint, data: bytes, nonce: uint), blockNumberOrBlockHash: uint latest earliest pending or string, optionObject: (disableStorage: bool, disableStack: bool, enableMemory: bool, enableReturnData: bool, tracer: string, timeOut: string, tracerConfig: object(onlyTopCall: bool, withLog: bool)))" }
 			}
-			if (debug.traceTransaction) {
+			if (typeof debug.traceTransaction !== 'undefined') {
 				debug.traceTransaction.toString = function() { return "function (transactionHash: string, optionObject: object(disableStorage: bool, disableStack: bool, enableMemory: bool, enableReturnData: bool, tracer: string, timeOut: string, tracerConfig: object(onlyTopCall: bool, withLog: bool)))" }
 			}
-			if (debug.verbosity) {
+			if (typeof debug.verbosity !== 'undefined') {
 				debug.verbosity.toString = function() { return "function (logLevel: int)" }
 			}
-			if (debug.vmodule) {
+			if (typeof debug.vmodule !== 'undefined') {
 				debug.vmodule.toString = function() { return "function (logPattern: string)" }
 			}
-			if (debug.writeBlockProfile) {
+			if (typeof debug.writeBlockProfile !== 'undefined') {
 				debug.writeBlockProfile.toString = function() { return "function (file: string, seconds: uint)" }
 			}
-			if (debug.writeMemProfile) {
+			if (typeof debug.writeMemProfile !== 'undefined') {
 				debug.writeMemProfile.toString = function() { return "function (file: string)" }
 			}
-			if (debug.writeMutexProfile) {
+			if (typeof debug.writeMutexProfile !== 'undefined') {
 				debug.writeMutexProfile.toString = function() { return "function (file: string)" }
 			}
-			if (debug.getReadStorageProofAtBlock) {
+			if (typeof debug.getReadStorageProofAtBlock !== 'undefined') {
 				debug.getReadStorageProofAtBlock.toString = function() { return "function (blockNumber: uint64)" }
 			}
 		}
 
 
-		if (miner) {
-			if (miner.getHashrate) {
+		if(typeof miner !== 'undefined'){
+			if(typeof miner.getHashrate !== 'undefined'){
 				miner.getHashrate.toString = function() { return "function ()" }
 			}
-			if (miner.setEtherbase) {
+			if (typeof miner.setEtherbase !== 'undefined') {
 				miner.setEtherbase.toString = function() { return "function (address: bytes20)" }
 			}
-			if (miner.setExtra) {
+			if (typeof miner.setExtra !== 'undefined') {
 				miner.setExtra.toString = function() { return "function (extraData: bytes32)" }
 			}
-			if (miner.setGasLimit) {
+			if (typeof miner.setGasLimit !== 'undefined') {
 				miner.setGasLimit.toString = function() { return "function (gasLimit: uint)" }
 			}
-			if (miner.setGasPrice) {
+			if (typeof miner.setGasPrice !== 'undefined') {
 				miner.setGasPrice.toString = function() { return "function (gasPrice: uint)" }
 			}
-			if (miner.setRecommitInterval) {
+			if (typeof miner.setRecommitInterval !== 'undefined') {
 				miner.setRecommitInterval.toString = function() { return "function (timeInterval: uint)" }
 			}
-			if (miner.start) {
+			if (typeof miner.start !== 'undefined') {
 				miner.start.toString = function() { return "function (threadsNum: unit)" }
 			}
-			if (miner.stop) {
+			if (typeof miner.stop !== 'undefined') {
 				miner.stop.toString = function() { return "function ()" }
 			}
 		}
 
 
-		if (personal) {
-			if (personal.deriveAccount) {
+		if(typeof personal !== 'undefined'){
+			if (typeof personal.deriveAccount !== 'undefined') {
 				personal.deriveAccount.toString = function() { return "function (seed: string, derivationPath: string)" }
 			}
-			if (personal.ecRecover) {
+			if (typeof personal.ecRecover !== 'undefined') {
 				personal.ecRecover.toString = function() { return "function (data: string, signature: string)" }
 			}
-			if (personal.getListAccounts) {
+			if (typeof personal.getListAccounts !== 'undefined') {
 				personal.getListAccounts.toString = function() { return "function (callback)" }
 			}
-			if (personal.getListWallets) {
+			if (typeof personal.getListWallets !== 'undefined') {
 				personal.getListWallets.toString = function() { return "function (callback)" }
 			}
-			if (personal.importRawKey) {
+			if (typeof personal.importRawKey !== 'undefined') {
 				personal.importRawKey.toString = function() { return "function (privateKey: string, passphrase: string)" }
 			}
-			if (personal.initializeWallet) {
+			if (typeof personal.initializeWallet !== 'undefined') {
 				personal.initializeWallet.toString = function() { return "function (url: string)" }
 			}
-			if (personal.lockAccount) {
+			if (typeof personal.lockAccount !== 'undefined') {
 				personal.lockAccount.toString = function() { return "function (address: bytes20)" }
 			}
-			if (personal.newAccount) {
+			if (typeof personal.newAccount !== 'undefined') {
 				personal.newAccount.toString = function() { return "function (password: string)" }
 			}
-			if (personal.openWallet) {
+			if (typeof personal.openWallet !== 'undefined') {
 				personal.openWallet.toString = function() { return "function (url: string, passphrase: string)" }
 			}
-			if (personal.sendTransaction) {
+			if (typeof personal.sendTransaction !== 'undefined') {
 				personal.sendTransaction.toString = function() { return "function (transaction: object(from: bytes20, to: bytes20, gas: uint, gasPrice: uint, value: uint, data: bytes, nonce: uint), passphrase: string)" }
 			}
-			if (personal.sign) {
+			if (typeof personal.sign !== 'undefined') {
 				personal.sign.toString = function() { return "function (dataToSign: string, accountAddress: bytes20, passphrase: string)" }
 			}
-			if (personal.signTransaction) {
+			if (typeof personal.signTransaction !== 'undefined') {
 				personal.signTransaction.toString = function() { return "function (transaction: object(from: bytes20, to: bytes20, gas: uint, gasPrice: uint, value: uint, data: bytes, nonce: uint), passphrase: string)" }
 			}
-			if (personal.unlockAccount) {
+			if (typeof personal.unlockAccount !== 'undefined') {
 				personal.unlockAccount.toString = function() { return "function (accountAddress: bytes20, passphrase: string, time: uint)" }
 			}
-			if (personal.unpair) {
+			if (typeof personal.unpair !== 'undefined') {
 				personal.unpair.toString = function() { return "function (url: string, pin: string)" }
 			}
 		}
 
 
-		if (utils) {
-			if (utils.saveString) {
+		if(typeof utils !== 'undefined'){
+			if (typeof utils.saveString !== 'undefined') {
 				utils.saveString.toString = function() { return "function (data: string, fileName: string)" }
 			}
 		}
-		
 
-		if (web3) {
-			if (web3.shh) {
-				if (web3.shh.addPrivateKey) {
+
+		if(typeof web3 !== 'undefined'){
+			if (typeof web3.shh !== 'undefined') {
+				if (typeof web3.shh.addPrivateKey !== 'undefined') {
 					web3.shh.addPrivateKey.toString = function() { return "function (privateKey: string, callback)" }
 				}
-				if (web3.shh.addSymKey) {
+				if (typeof web3.shh.addSymKey !== 'undefined') {
 					web3.shh.addSymKey.toString = function() { return "function (symKey: string, callback)" }
 				}
-				if (web3.shh.deleteKeyPair) {
+				if (typeof web3.shh.deleteKeyPair !== 'undefined') {
 					web3.shh.deleteKeyPair.toString = function() { return "function (id: string, callback)" }
 				}
-				if (web3.shh.deleteSymKey) {
+				if (typeof web3.shh.deleteSymKey !== 'undefined') {
 					web3.shh.deleteSymKey.toString = function() { return "function (symKeyID: string, callback)" }
 				}
-				if (web3.shh.generateSymKeyFromPassword) {
+				if (typeof web3.shh.generateSymKeyFromPassword !== 'undefined') {
 					web3.shh.generateSymKeyFromPassword.toString = function() { return "function (password: string, callback)" }
 				}
-				if (web3.shh.getPrivateKey) {
+				if (typeof web3.shh.getPrivateKey !== 'undefined') {
 					web3.shh.getPrivateKey.toString = function() { return "function (id: string, callback)" }
 				}
-				if (web3.shh.getPublicKey) {
+				if (typeof web3.shh.getPublicKey !== 'undefined') {
 					web3.shh.getPublicKey.toString = function() { return "function (id: string, callback)" }
 				}
-				if (web3.shh.getSymKey) {
+				if (typeof web3.shh.getSymKey !== 'undefined') {
 					web3.shh.getSymKey.toString = function() { return "function (id: string, callback)" }
 				}
-				if (web3.shh.hasKeyPair) {
+				if (typeof web3.shh.hasKeyPair !== 'undefined') {
 					web3.shh.hasKeyPair.toString = function() { return "function (id: string, callback)" }
 				}
-				if (web3.shh.hasSymKey) {
+				if (typeof web3.shh.hasSymKey !== 'undefined') {
 					web3.shh.hasSymKey.toString = function() { return "function (id: string, callback)" }
 				}
-				if (web3.shh.markTrustedPeer) {
+				if (typeof web3.shh.markTrustedPeer !== 'undefined') {
 					web3.shh.markTrustedPeer.toString = function() { return "function (enode: string, callback)" }
 				}
-				if (web3.shh.newKeyPair) {
+				if (typeof web3.shh.newKeyPair !== 'undefined') {
 					web3.shh.newKeyPair.toString = function() { return "function (callback)" }
 				}
-				if (web3.shh.newMessageFilter) {
+				if (typeof web3.shh.newMessageFilter !== 'undefined') {
 					web3.shh.newMessageFilter.toString = function() { return "function (messageFilterObject: object(symKeyID: string, privateKeyID: string, sig: string, minPow: uint, topics: bytes4[]))" }
 				}
-				if (web3.shh.newSymKey) {
+				if (typeof web3.shh.newSymKey !== 'undefined') {
 					web3.shh.newSymKey.toString = function() { return "function (callback)" }
 				}
-				if (web3.shh.post) {
+				if (typeof web3.shh.post !== 'undefined') {
 					web3.shh.post.toString = function() { return "function (messageObject: object(symKeyId: string, pubKey: string, sig: string, ttl: uint, topic: string, payload: string, powTime: uint, powTarget: uint))" }
 				}
-				if (web3.shh.setMaxMessageSize) {
+				if (typeof web3.shh.setMaxMessageSize !== 'undefined') {
 					web3.shh.setMaxMessageSize.toString = function() { return "function (size: uint, callback)" }
 				}
-				if (web3.shh.setMinPoW) {
+				if (typeof web3.shh.setMinPoW !== 'undefined') {
 					web3.shh.setMinPoW.toString = function() { return "function (pow: uint, callback)" }
 				}
-				if (web3.shh.version) {
+				if (typeof web3.shh.version !== 'undefined') {
 					web3.shh.version.toString = function() { return "function ()" }
 				}
 			}
 		}
 
 
-		if (web3) {
-			if (web3.admin) {
-				if (web3.admin.addPeer) {
+		if(typeof web3 !== 'undefined'){
+			if(typeof web3.admin !== 'undefined'){
+				if(typeof web3.admin.addPeer !== 'undefined'){
 					web3.admin.addPeer.toString = function() { return "function (url(enode://<node-id>@<ip-address>:<port>): string)" }
 				}
-				if (web3.admin.addTrustedPeer) {
+				if (typeof web3.admin.addTrustedPeer !== 'undefined') {
 					web3.admin.addTrustedPeer.toString = function() { return "function (url(enode://<node-id>@<ip-address>:<port>): string)" }
 				}
-				if (web3.admin.exportChain) {
+				if (typeof web3.admin.exportChain !== 'undefined') {
 					web3.admin.exportChain.toString = function() { return "function (file: string, firstBlockNum: uint64, lastBlockNum: uint64)" }
 				}
-				if (web3.admin.importChain) {
+				if (typeof web3.admin.importChain !== 'undefined') {
 					web3.admin.importChain.toString = function() { return "function (file: string)" }
 				}
-				if (web3.admin.removePeer) {
+				if (typeof web3.admin.removePeer !== 'undefined') {
 					web3.admin.removePeer.toString = function() { return "function (url(enode://<node-id>@<ip-address>:<port>): string)" }
 				}
-				if (web3.admin.removeTrustedPeer) {
+				if (typeof web3.admin.removeTrustedPeer !== 'undefined') {
 					web3.admin.removeTrustedPeer.toString = function() { return "function (url(enode://<node-id>@<ip-address>:<port>): string)" }
 				}
-				if (web3.admin.startHTTP) {
+				if (typeof web3.admin.startHTTP !== 'undefined') {
 					web3.admin.startHTTP.toString = function() { return "function (host: string, port: uint, cors: string, apis: string)" }
 				}
-				if (web3.admin.startRPC) {
+				if (typeof web3.admin.startRPC !== 'undefined') {
 					web3.admin.startRPC.toString = function() { return "function (host: string, port: uint, cors: string, apis: string)" }
 				}
-				if (web3.admin.startWS) {
+				if (typeof web3.admin.startWS !== 'undefined') {
 					web3.admin.startWS.toString = function() { return "function (host: string, port: uint, cors: string, apis: string)" }
 				}
 			}
 		}
 
-
-		if (web3) {
-			if (web3.bzz) {
-				if (web3.bzz.download) {
+		if(typeof web3 !== 'undefined'){
+			if(typeof web3.bzz !== 'undefined'){
+				if (typeof web3.bzz.download !== 'undefined') {
 					web3.bzz.download.toString = function() { return "function (bzzHash: string, localpath: string)" }
 				}
-				if (web3.bzz.get) {
+				if (typeof web3.bzz.get !== 'undefined') {
 					web3.bzz.get.toString = function() { return "function (bzzHash: string)" }
 				}
-				if (web3.bzz.modify) {
+				if (typeof web3.bzz.modify !== 'undefined') {
 					web3.bzz.modify.toString = function() { return "function (manifestHash: string, path: string, data: stringOrBuffer, contentType: string)" }
 				}
-				if (web3.bzz.put) {
+				if (typeof web3.bzz.put !== 'undefined') {
 					web3.bzz.put.toString = function() { return "function (content: stringOrBuffer)" }
 				}
-				if (web3.bzz.store) {
+				if (typeof web3.bzz.store !== 'undefined') {
 					web3.bzz.store.toString = function() { return "function (data: stringOrBufferOrArrayBuffer)" }
 				}
-				if (web3.bzz.upload) {
+				if (typeof web3.bzz.upload !== 'undefined') {
 					web3.bzz.upload.toString = function() { return "function (data: stringOrBuffer)" }
 				}
 			}
 		}
 
 
-		if (web3) {
-			if (web3.BigNumber) {
+		if(typeof web3 !== 'undefined'){
+			if (typeof web3.BigNumber !== 'undefined') {
 				web3.BigNumber.toString = function() { return "function (number: int float string or BigNumber)" }
 			}
-			if (web3.createBatch) {
+			if (typeof web3.createBatch !== 'undefined') {
 				web3.createBatch.toString = function() { return "function ()" }
 			}
-			if (web3.fromAscii) {
+			if (typeof web3.fromAscii !== 'undefined') {
 				web3.fromAscii.toString = function() { return "function (asciiData: string)" }
 			}
-			if (web3.fromDecimal) {
+			if (typeof web3.fromDecimal !== 'undefined') {
 				web3.fromDecimal.toString = function() { return "function (value: int float or string)" }
 			}
-			if (web3.fromICAP) {
+			if (typeof web3.fromICAP !== 'undefined') {
 				web3.fromICAP.toString = function() { return "function (icap: string)" }
 			}
-			if (web3.fromUtf8) {
+			if (typeof web3.fromUtf8 !== 'undefined') {
 				web3.fromUtf8.toString = function() { return "function (utf8Data: string)" }
 			}
-			if (web3.fromWei) {
+			if (typeof web3.fromWei !== 'undefined') {
 				web3.fromWei.toString = function() { return "function (number: uint string or BigNumber, unit: string)" }
 			}
-			if (web3.isAddress) {
+			if (typeof web3.isAddress !== 'undefined') {
 				web3.isAddress.toString = function() { return "function (HexString: string)" }
 			}
-			if (web3.isChecksumAddress) {
+			if (typeof web3.isChecksumAddress !== 'undefined') {
 				web3.isChecksumAddress.toString = function() { return "function (address: bytes)" }
 			}
-			if (web3.isConnected) {
+			if (typeof web3.isConnected !== 'undefined') {
 				web3.isConnected.toString = function() { return "function ()" }
 			}
-			if (web3.padLeft) {
+			if (typeof web3.padLeft !== 'undefined') {
 				web3.padLeft.toString = function() { return "function (value: string, length: uint, paddingCharacter: string)" }
 			}
-			if (web3.padRight) {
+			if (typeof web3.padRight !== 'undefined') {
 				web3.padRight.toString = function() { return "function (value: string, length: uint, paddingCharacter: string)" }
 			}
-			if (web3.reset) {
+			if (typeof web3.reset !== 'undefined') {
 				web3.reset.toString = function() { return "function (keepIsSyncing: bool)" }
 			}
-			if (web3.setProvider) {
+			if (typeof web3.setProvider !== 'undefined') {
 				web3.setProvider.toString = function() { return "function (provider: web3 provider)" }
 			}
-			if (web3.sha3) {
+			if (typeof web3.sha3 !== 'undefined') {
 				web3.sha3.toString = function() { return "function (data: bytes)" }
 			}
-			if (web3.toAscii) {
+			if (typeof web3.toAscii !== 'undefined') {
 				web3.toAscii.toString = function() { return "function (hex: string)" }
 			}
-			if (web3.toBigNumber) {
+			if (typeof web3.toBigNumber !== 'undefined') {
 				web3.toBigNumber.toString = function() { return "function (value: int or string)" }
 			}
-			if (web3.toChecksumAddress) {
+			if (typeof web3.toChecksumAddress !== 'undefined') {
 				web3.toChecksumAddress.toString = function() { return "function (address: bytes20)" }
 			}
-			if (web3.toDecimal) {
+			if (typeof web3.toDecimal !== 'undefined') {
 				web3.toDecimal.toString = function() { return "function (hexString: string)" }
 			}
-			if (web3.toHex) {
+			if (typeof web3.toHex !== 'undefined') {
 				web3.toHex.toString = function() { return "function (val: string int float object array or BigNumber)" }
 			}
-			if (web3.toUtf8) {
+			if (typeof web3.toUtf8 !== 'undefined') {
 				web3.toUtf8.toString = function() { return "function (hexString: string)" }
 			}
-			if (web3.toWei) {
+			if (typeof web3.toWei !== 'undefined') {
 				web3.toWei.toString = function() { return "function (number: string or BigNumber, unit: string)" }
 			}
-		}
+		}	
 	`)
 }
