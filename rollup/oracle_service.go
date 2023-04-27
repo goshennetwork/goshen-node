@@ -60,7 +60,7 @@ func (self *PriceOracleService) run() {
 					}
 				}
 				self.SetL1Price(l1maxGasPrice)
-				l1gasPricesQue = []uint64{}
+				l1gasPricesQue = l1gasPricesQue[:0]
 			}
 		}
 	}
