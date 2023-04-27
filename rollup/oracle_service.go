@@ -30,6 +30,43 @@ func (self *PriceOracleService) Start() error {
 	return nil
 }
 
+<<<<<<< HEAD
+=======
+func (self *PriceOracleService) run() {
+	ticker := time.NewTicker(12 * time.Second)
+	cycleTicker := time.NewTicker(10 * time.Minute)
+	defer ticker.Stop()
+	defer cycleTicker.Stop()
+	var l1gasPricesQue []uint64
+
+	for {
+		select {
+		case <-self.quit:
+			log.Warn("price oracle service", "info", "quiting")
+			return
+		case <-ticker.C:
+			l1price, err := self.L1Client.Eth().GasPrice()
+			if err != nil {
+				log.Warn("get l1 gasprice", "err", err)
+			} else {
+				l1gasPricesQue = append(l1gasPricesQue, l1price)
+			}
+		case <-cycleTicker.C:
+			if len(l1gasPricesQue) > 0 {
+				l1maxGasPrice := l1gasPricesQue[0]
+				for _, price := range l1gasPricesQue {
+					if price > l1maxGasPrice {
+						l1maxGasPrice = price
+					}
+				}
+				self.SetL1Price(l1maxGasPrice)
+				l1gasPricesQue = l1gasPricesQue[:0]
+			}
+		}
+	}
+}
+
+>>>>>>> b48f85f7b2fe87b8a194069eca39d828a317ff67
 func (self *PriceOracleService) Stop() error {
 	if !atomic.CompareAndSwapUint32(&self.running, 1, 0) {
 		return errors.New("already closed")
