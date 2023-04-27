@@ -36,9 +36,7 @@ func (self *PriceOracleService) run() {
 	var secondTime time.Duration = 12
 	var minuteTime time.Duration = 10
 	ticker := time.NewTicker(secondTime * time.Second)
-	cycleTicker := time.NewTicker(minuteTime * time.Minute)
 	defer ticker.Stop()
-	defer cycleTicker.Stop()
 	var l1gasPricesQue []uint64
 
 	for {
@@ -57,16 +55,15 @@ func (self *PriceOracleService) run() {
 				} else {
 					l1gasPricesQue = append(l1gasPricesQue, l1price)
 				}
-			}
-		case <-cycleTicker.C:
-			if len(l1gasPricesQue) > 0 {
-				l1maxGasPrice := l1gasPricesQue[0]
-				for _, price := range l1gasPricesQue {
-					if price > l1maxGasPrice {
-						l1maxGasPrice = price
+				if len(l1gasPricesQue) > 0 {
+					l1maxGasPrice := l1gasPricesQue[0]
+					for _, price := range l1gasPricesQue {
+						if price > l1maxGasPrice {
+							l1maxGasPrice = price
+						}
 					}
+					self.SetL1Price(l1maxGasPrice)
 				}
-				self.SetL1Price(l1maxGasPrice)
 			}
 		}
 	}
