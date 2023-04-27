@@ -4,8 +4,10 @@ import (
 	"errors"
 	"math/big"
 	"sync/atomic"
+	"time"
 
 	"github.com/ethereum/go-ethereum/common/consts"
+	"github.com/ethereum/go-ethereum/log"
 	"github.com/laizy/web3"
 )
 
@@ -30,8 +32,6 @@ func (self *PriceOracleService) Start() error {
 	return nil
 }
 
-<<<<<<< HEAD
-=======
 func (self *PriceOracleService) run() {
 	ticker := time.NewTicker(12 * time.Second)
 	cycleTicker := time.NewTicker(10 * time.Minute)
@@ -66,7 +66,6 @@ func (self *PriceOracleService) run() {
 	}
 }
 
->>>>>>> b48f85f7b2fe87b8a194069eca39d828a317ff67
 func (self *PriceOracleService) Stop() error {
 	if !atomic.CompareAndSwapUint32(&self.running, 1, 0) {
 		return errors.New("already closed")
