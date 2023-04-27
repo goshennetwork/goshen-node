@@ -4,10 +4,8 @@ import (
 	"errors"
 	"math/big"
 	"sync/atomic"
-	"time"
 
 	"github.com/ethereum/go-ethereum/common/consts"
-	"github.com/ethereum/go-ethereum/log"
 	"github.com/laizy/web3"
 )
 
@@ -30,46 +28,6 @@ func (self *PriceOracleService) Start() error {
 	}
 	go self.run()
 	return nil
-}
-
-func (self *PriceOracleService) run() {
-	var secondTime time.Duration = 12
-	var minuteTime time.Duration = 10
-	ticker := time.NewTicker(secondTime * time.Second)
-	cycleTicker := time.NewTicker(minuteTime * time.Minute)
-	defer ticker.Stop()
-	defer cycleTicker.Stop()
-	var l1gasPricesQue []uint64
-
-	for {
-		select {
-		case <-self.quit:
-			log.Warn("price oracle service", "info", "quiting")
-			return
-		case <-ticker.C:
-			l1price, err := self.L1Client.Eth().GasPrice()
-			if err != nil {
-				log.Warn("get l1 gasprice", "err", err)
-			} else {
-				if len(l1gasPricesQue) == int(minuteTime*time.Minute/secondTime*time.Second) {
-					l1gasPricesQue = l1gasPricesQue[1:]
-					l1gasPricesQue = append(l1gasPricesQue, l1price)
-				} else {
-					l1gasPricesQue = append(l1gasPricesQue, l1price)
-				}
-			}
-		case <-cycleTicker.C:
-			if len(l1gasPricesQue) > 0 {
-				l1maxGasPrice := l1gasPricesQue[0]
-				for _, price := range l1gasPricesQue {
-					if price > l1maxGasPrice {
-						l1maxGasPrice = price
-					}
-				}
-				self.SetL1Price(l1maxGasPrice)
-			}
-		}
-	}
 }
 
 func (self *PriceOracleService) Stop() error {
