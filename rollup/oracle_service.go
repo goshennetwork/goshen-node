@@ -33,8 +33,12 @@ func (self *PriceOracleService) Start() error {
 }
 
 func (self *PriceOracleService) run() {
-	ticker := time.NewTicker(10 * time.Second)
+	var secondTime time.Duration = 12
+	var minuteTime time.Duration = 10
+	ticker := time.NewTicker(secondTime * time.Second)
 	defer ticker.Stop()
+	var l1gasPricesQue []uint64
+
 	for {
 		select {
 		case <-self.quit:
@@ -44,8 +48,21 @@ func (self *PriceOracleService) run() {
 			l1price, err := self.L1Client.Eth().GasPrice()
 			if err != nil {
 				log.Warn("get l1 gasprice", "err", err)
+			} else {
+				if len(l1gasPricesQue) == int(minuteTime*time.Minute/secondTime*time.Second) {
+					l1gasPricesQue = l1gasPricesQue[1:]
+					l1gasPricesQue = append(l1gasPricesQue, l1price)
+				} else {
+					l1gasPricesQue = append(l1gasPricesQue, l1price)
+				}
+				l1maxGasPrice := l1gasPricesQue[0]
+				for _, price := range l1gasPricesQue {
+					if price > l1maxGasPrice {
+						l1maxGasPrice = price
+					}
+				}
+				self.SetL1Price(l1maxGasPrice)
 			}
-			self.SetL1Price(l1price)
 		}
 	}
 }
