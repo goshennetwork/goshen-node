@@ -55,15 +55,13 @@ func (self *PriceOracleService) run() {
 				} else {
 					l1gasPricesQue = append(l1gasPricesQue, l1price)
 				}
-				if len(l1gasPricesQue) > 0 {
-					l1maxGasPrice := l1gasPricesQue[0]
-					for _, price := range l1gasPricesQue {
-						if price > l1maxGasPrice {
-							l1maxGasPrice = price
-						}
+				l1maxGasPrice := l1gasPricesQue[0]
+				for _, price := range l1gasPricesQue {
+					if price > l1maxGasPrice {
+						l1maxGasPrice = price
 					}
-					self.SetL1Price(l1maxGasPrice)
 				}
+				self.SetL1Price(l1maxGasPrice)
 			}
 		}
 	}
